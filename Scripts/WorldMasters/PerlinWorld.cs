@@ -47,7 +47,7 @@ public class PerlinWorld : WorldMaster
 		WorldCellType type = DefaultWorldCellType;
 		WorldObject content = null;
 		Vector3Int worldPosition3D = new Vector3Int( x,
-			Mathf.RoundToInt( MathFunctions.UpScaleMatrixValue(
+			Mathf.RoundToInt( MathFunctions.ScaleUpMatrixValue(
 				( a, b ) => HeightsMap[a, b], MapDivisor, x, z,
 				new Vector2Int( HeightsMap.GetLength( 0 ), HeightsMap.GetLength( 1 ) ),
 				( a, b ) => a * b,

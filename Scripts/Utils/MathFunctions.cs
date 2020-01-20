@@ -18,7 +18,7 @@ public static class MathFunctions
 
 	public static long AverageTimeAstar { get; private set; }
 	public static long MaxTimeAstar { get; private set; }
-	private static int NumMeasuresTimeAstarPath = 0;
+	private static int NumMeasuresTimeAstar = 0;
 
 	public static float AveragePathlengthAstar { get; private set; }
 	public static float MaxPathlengthAstar { get; private set; }
@@ -30,8 +30,8 @@ public static class MathFunctions
 
 	private static void UpdateAstarStatistics( long time, int pathLength, int checkedPositions )
 	{
-		AverageTimeAstar = ( AverageTimeAstar * NumMeasuresTimeAstarPath + time ) / ( NumMeasuresTimeAstarPath + 1 );
-		NumMeasuresTimeAstarPath++;
+		AverageTimeAstar = ( AverageTimeAstar * NumMeasuresTimeAstar + time ) / ( NumMeasuresTimeAstar + 1 );
+		NumMeasuresTimeAstar++;
 		if ( time > MaxTimeAstar )
 		{
 			MaxTimeAstar = time;
@@ -52,11 +52,14 @@ public static class MathFunctions
 		}
 	}
 
+	/// <summary>
+	/// Reset all the current statistics of MathFunctions.
+	/// </summary>
 	public static void ResetStatistics()
 	{
 		AverageTimeAstar = 0;
 		MaxTimeAstar = 0;
-		NumMeasuresTimeAstarPath = 0;
+		NumMeasuresTimeAstar = 0;
 
 		AveragePathlengthAstar = 0;
 		MaxPathlengthAstar = 0;
@@ -67,91 +70,132 @@ public static class MathFunctions
 		NumMeasuresCheckedPositionsAstar = 0;
 	}
 
+	/// <summary>
+	/// <para>Get a string with the current MathFunctions statistics.</para>
+	/// <para>Includes: A* </para>
+	/// </summary>
+	/// <returns>String with the statistics info.</returns>
 	public static string GetStatistics()
 	{
-		return $"Astar statistics:" +
-					$" Average time = {AverageTimeAstar} ms" +
-					$" Max time = {MaxTimeAstar} ms" +
-					$" Average path length = {AveragePathlengthAstar}" +
-					$" Max path length = {MaxPathlengthAstar}" +
-					$" Average checked positions = {AverageCheckedPositionsAstar}" +
-					$" Max checked positions = {MaxCheckedPositionsAstar}" +
-					$" Relation path length <-> checked positions = {( AveragePathlengthAstar / AverageCheckedPositionsAstar ).ToString( "f3" )}";
+		return $"A* statistics:" +
+					$"\nNum calls = {NumMeasuresTimeAstar}" +
+					$"\nAverage time = {AverageTimeAstar} ms" +
+					$"\nMax time = {MaxTimeAstar} ms" +
+					$"\nAverage path length = {AveragePathlengthAstar}" +
+					$"\nMax path length = {MaxPathlengthAstar}" +
+					$"\nAverage checked positions = {AverageCheckedPositionsAstar}" +
+					$"\nMax checked positions = {MaxCheckedPositionsAstar}" +
+					$"\nRelation path length <-> checked positions = {( AveragePathlengthAstar / AverageCheckedPositionsAstar ).ToString( "f3" )}";
+		// TODO : Implement direct path statistics
 	}
 
 	#endregion
 
 	#region Pathfinding
 
-	public delegate bool IsPositionAccesible( Vector2Int position );
+	/// <summary>
+	/// Method that checks if a position is accessible.
+	/// </summary>
+	/// <param name="position">Position to check.</param>
+	/// <returns>If the position is accessible.</returns>
+	public delegate bool IsPositionAccessible( Vector2Int position );
 
-	public static List<Vector2Int> PathfindingWithReusing( Vector2Int origin, Vector2Int target, IsPositionAccesible isPositionAccesible, List<Vector2Int> pathToLastTarget, Vector2Int lastTarget, int maxPathLenght )
+	/// <summary>
+	/// <para>Obtains a path from origin to objective reusing the lastPathToObjective if is possible ( if origin and objective exists in path one before the other ).</para>
+	/// <para>If is not possible, uses the method MathFunctions.Pathfinding to calculate a new path. See specific documentation of MathFunctions.Pathfinding for more information.</para>
+	/// </summary>
+	/// <param name="origin">Start position ( will not be included in result path ).</param>
+	/// <param name="objective">Objective position.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <param name="lastPathToObjective">Last path to objective calculated. Checked for reuse.</param>
+	/// <param name="maxPathLenght">Maximum length of the path if it must be recalculated and cannot be direct.</param>
+	/// <returns>List of the positions of the best path found. Not includes the origin position.</returns>
+	public static List<Vector2Int> PathfindingWithReusing( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible, List<Vector2Int> lastPathToObjective, int maxPathLenght )
 	{
+		List<Vector2Int> path = new List<Vector2Int>();
+
 		// If any calculated path
-		if ( pathToLastTarget == null || pathToLastTarget.Count == 0 )
+		if ( lastPathToObjective == null || lastPathToObjective.Count == 0 )
 		{
-			pathToLastTarget = Pathfinding( origin, target, isPositionAccesible, maxPathLenght );
+			path = Pathfinding( origin, objective, isPositionAccessible, maxPathLenght );
 		}
 		// Is some path previously calculated
 		else
 		{
-			int positionCount;
+			int pos;
 			bool isPathClear = true;
-			bool pathContainsTarget = false;
+			bool pathContainsOrigin = false;
+			int originPosInPath = -1;
+			bool pathContainsObjective = false;
 			Vector2Int currentposition;
 
 			// Check is the path is clear and if some position is already done
-			for ( positionCount = 0; positionCount < pathToLastTarget.Count && isPathClear && !pathContainsTarget; positionCount++ )
+			for ( pos = 0; pos < lastPathToObjective.Count && isPathClear && !pathContainsObjective; pos++ )
 			{
-				currentposition = pathToLastTarget[positionCount];
+				currentposition = lastPathToObjective[pos];
 
-				// Check if the path has a not accesible position
-				isPathClear &= isPositionAccesible( currentposition );
+				isPathClear = isPositionAccessible( currentposition );
 
-				pathContainsTarget = pathToLastTarget[positionCount].Equals( target );
-			}
-
-			// If exists path to a not changed target
-			if ( lastTarget.Equals( target ) )
-			{
-				if ( !isPathClear )
+				// Check if pos is origin
+				if ( !pathContainsOrigin && currentposition == origin )
 				{
-					pathToLastTarget = Pathfinding( origin, target, isPositionAccesible, maxPathLenght );
+					pathContainsOrigin = true;
+					originPosInPath = pos;
+				}
+				// Check if is target only is origin has been found
+				else
+				{
+					pathContainsObjective = currentposition == objective;
 				}
 			}
-			// If new target
+
+			// If the last path can be used
+			if ( pathContainsOrigin && pathContainsObjective )
+			{
+				path = lastPathToObjective.GetRange( 0, pos - 1 );
+			}
+			// If is impossible to reuse path
 			else
 			{
-				// If is impossible to reuse path calculation
-				if ( !pathContainsTarget || !isPathClear )
-				{
-					pathToLastTarget = Pathfinding( origin, target, isPositionAccesible, maxPathLenght );
-				}
+				path = Pathfinding( origin, objective, isPositionAccessible, maxPathLenght );
 			}
-		}
-
-		return pathToLastTarget;
-	}
-
-	public static List<Vector2Int> Pathfinding( Vector2Int origin, Vector2Int target, IsPositionAccesible isPositionAccesible, int maxPathLenght )
-	{
-		List<Vector2Int> path;
-		bool directPathArrives;
-
-		// First, try direct path
-		path = DirectPath( origin, target, isPositionAccesible );
-		directPathArrives = path.Count != 0 && IsTouchingTarget( path[path.Count - 1], target, isPositionAccesible );
-
-		// If a direct path not arrives to target
-		if ( !directPathArrives )
-		{
-			path = AstarPath( origin, target, isPositionAccesible, maxPathLenght );
 		}
 
 		return path;
 	}
 
-	public class PositionInPath
+	/// <summary>
+	/// <para>Obtains the path from the origin to objective.</para>
+	/// <para>First will search a direct path to objective and, if is not possible, will use the A* algorithm.</para>
+	/// <para>If the path to objective is impossible, returns a path to the position closest to the target.</para>
+	/// <para>Start position will not be included in result path.</para>
+	/// <para>maxPathLenght will be used only if a direct path to target cannot be found.</para>
+	/// </summary>
+	/// <param name="origin">Start position ( will not be included in result path ).</param>
+	/// <param name="objective">Objective position.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <param name="maxPathLenght">Maximum path lenght of a non-direct path.</param>
+	/// <returns>List of the positions of the best path found. Not includes the origin position.</returns>
+	public static List<Vector2Int> Pathfinding( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible, int maxPathLenght )
+	{
+		List<Vector2Int> path;
+
+		// First, search direct path
+		path = DirectPath( origin, objective, isPositionAccessible );
+
+		// If the direct path not arrives to target
+		if ( path.Count == 0 || !IsTouchingTarget( path[path.Count - 1], objective, isPositionAccessible ) )
+		{
+			path = AstarPath( origin, objective, isPositionAccessible, maxPathLenght );
+		}
+
+		return path;
+	}
+
+	/// <summary>
+	/// Auxiliar class to calculate costs and link positions of a path.
+	/// </summary>
+	private class PositionInPath
 	{
 		public Vector2Int Position { get; }
 		public float AcummulatedCost { get; }
@@ -181,7 +225,16 @@ public static class MathFunctions
 	}
 
 	// TODO : Best control of blocked targets
-	public static List<Vector2Int> AstarPath( Vector2Int origin, Vector2Int target, IsPositionAccesible isPositionAccesible, int maxCheckedPositions )
+	/// <summary>
+	/// <para>A* pathfinding algorithm. Calculates the shortest path from origin to target if exists.</para>
+	/// <para>If the number of checked positions is greater than maxCheckedPositions or the objective is not accessible, returns a path to the position closest to the target.</para>
+	/// </summary>
+	/// <param name="origin">Start position ( will not be included in result path ).</param>
+	/// <param name="objective">Objective position.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <param name="maxCheckedPositions">Maximum number of checked positions to reach the objective.</param>
+	/// <returns>The best path found from origin to objective.</returns>
+	public static List<Vector2Int> AstarPath( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible, int maxCheckedPositions )
 	{
 		Stopwatch chrono = new Stopwatch();
 		chrono.Start();
@@ -191,23 +244,23 @@ public static class MathFunctions
 		List<PositionInPath> remainingPositions = new List<PositionInPath>() { new PositionInPath( origin, 0, null ) };
 
 		PositionInPath currentPositionInPath = null;
-		PositionInPath closestToTarget = remainingPositions[0];
-		float closestDistanceToTarget = closestToTarget.Position.Distance( target );
+		PositionInPath closestToObjective = remainingPositions[0];
+		float closestDistanceToObjective = closestToObjective.Position.Distance( objective );
 		PositionInPath nextPositionInPath;
 		float auxDistance;
 
-		bool destinyNotAccesible = false;
-		bool targetReached = false;
+		bool destinyNotAccessible = false;
+		bool objectiveReached = false;
 
 		// Calcule path 
-		while ( !targetReached && !destinyNotAccesible )
+		while ( !objectiveReached && !destinyNotAccessible )
 		{
 			// Select next position
 			currentPositionInPath = remainingPositions[0];
 			foreach ( PositionInPath positionInPath in remainingPositions )
 			{
-				if ( ( positionInPath.Position.Distance( target ) + positionInPath.AcummulatedCost ) <
-					( currentPositionInPath.Position.Distance( target ) + currentPositionInPath.AcummulatedCost ) )
+				if ( ( positionInPath.Position.Distance( objective ) + positionInPath.AcummulatedCost ) <
+					( currentPositionInPath.Position.Distance( objective ) + currentPositionInPath.AcummulatedCost ) )
 				{
 					currentPositionInPath = positionInPath;
 				}
@@ -224,40 +277,40 @@ public static class MathFunctions
 					currentPositionInPath.AcummulatedCost + movement.magnitude,
 					currentPositionInPath );
 
-				// If the position isn't checked and is accesible
-				if ( !checkedPositions.Contains( nextPositionInPath ) && IsPossibleDirection( currentPositionInPath.Position, movement, isPositionAccesible ) )
+				// If the position isn't checked and is accessible
+				if ( !checkedPositions.Contains( nextPositionInPath ) && IsPossibleDirection( currentPositionInPath.Position, movement, isPositionAccessible ) )
 				{
 					remainingPositions.Add( nextPositionInPath );
 
 					// Check closest to target
-					auxDistance = nextPositionInPath.Position.Distance( target );
-					if ( auxDistance < closestDistanceToTarget )
+					auxDistance = nextPositionInPath.Position.Distance( objective );
+					if ( auxDistance < closestDistanceToObjective )
 					{
-						closestToTarget = nextPositionInPath;
-						closestDistanceToTarget = auxDistance;
+						closestToObjective = nextPositionInPath;
+						closestDistanceToObjective = auxDistance;
 					}
 				}
 			}
 
 			// Check end of path
-			if ( IsTouchingTarget( currentPositionInPath.Position, target, isPositionAccesible ) )
+			if ( IsTouchingTarget( currentPositionInPath.Position, objective, isPositionAccessible ) )
 			{
-				targetReached = true;
+				objectiveReached = true;
 			}
 			else
 			{
-				destinyNotAccesible = remainingPositions.Count == 0 || checkedPositions.Count > maxCheckedPositions;
+				destinyNotAccessible = remainingPositions.Count == 0 || checkedPositions.Count > maxCheckedPositions;
 			}
 		}
 
 		// If is impossible to acces to the target use the closest position as desitiny
-		if ( destinyNotAccesible )
+		if ( destinyNotAccessible )
 		{
-			currentPositionInPath = closestToTarget;
+			currentPositionInPath = closestToObjective;
 		}
 
 		// If the currentPosition ( best last position found ) is closer to target than the origin is a good path
-		if ( currentPositionInPath.Position.Distance( target ) < origin.Distance( target ) )
+		if ( currentPositionInPath.Position.Distance( objective ) < origin.Distance( objective ) )
 		{
 			// Do the reverse path, from the end to the origin position
 			while ( currentPositionInPath.Position != origin )
@@ -275,30 +328,38 @@ public static class MathFunctions
 		return path;
 	}
 
-	public static List<Vector2Int> DirectPath( Vector2Int origin, Vector2Int target, IsPositionAccesible isPositionAccesible )
+	/// <summary>
+	/// <para>Calculates the direct path ( straight or diagonal line ) if is possible or return a incomplete path.</para>
+	/// </summary>
+	/// <param name="origin">Start position ( will not be included in result path ).</param>
+	/// <param name="objective">Objective position.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <returns>A direct path to objective if is possible, or a incomplete path instead.</returns>
+	public static List<Vector2Int> DirectPath( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible )
 	{
 		List<Vector2Int> path = new List<Vector2Int>();
 
-		if ( !IsTargetAccesBlocked( target, isPositionAccesible ) )
+		// TODO : Best control of blocked targets
+		if ( !IsObjectiveAccessible( objective, isPositionAccessible ) )
 		{
 			Vector2Int position = origin;
 			Vector2Int movement = new Vector2Int();
 
-			bool targetNotAccesible = false;
+			bool targetNotAccessible = false;
 
-			while ( !position.Equals( target ) && !targetNotAccesible )
+			while ( !position.Equals( objective ) && !targetNotAccessible )
 			{
-				movement.x = -Clamp( position.x.CompareTo( target.x ), -1, 1 );
-				movement.y = -Clamp( position.y.CompareTo( target.y ), -1, 1 );
+				movement.x = -Clamp( position.x.CompareTo( objective.x ), -1, 1 );
+				movement.y = -Clamp( position.y.CompareTo( objective.y ), -1, 1 );
 
-				if ( IsPossibleDirection( position, movement, isPositionAccesible ) )
+				if ( IsPossibleDirection( position, movement, isPositionAccessible ) )
 				{
 					position = position + movement;
 					path.Add( position );
 				}
 				else
 				{
-					targetNotAccesible = true;
+					targetNotAccessible = true;
 				}
 			}
 		}
@@ -306,23 +367,41 @@ public static class MathFunctions
 		return path;
 	}
 
-	public static bool IsTargetAccesBlocked( Vector2Int target, IsPositionAccesible isPositionAccesible )
+	/// <summary>
+	/// Checks if the objective is accessible by at least one of the surrounding positions ( in eight directions ).
+	/// </summary>
+	/// <param name="objective">Objective position.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <returns>True only if the objective can be accesed by at least one surrounding position.</returns>
+	public static bool IsObjectiveAccessible( Vector2Int objective, IsPositionAccessible isPositionAccessible )
 	{
-		bool isAccesible = false;
+		bool isAccessible = false;
 
 		// For all directions, while a acces to the target isn't found
-		for ( int i = 0; i < EightDirections2D.Count && !isAccesible; i++ )
+		for ( int i = 0; i < EightDirections2D.Count && !isAccessible; i++ )
 		{
-			isAccesible = isPositionAccesible( target + EightDirections2D[i] );
+			isAccessible = isPositionAccessible( objective + EightDirections2D[i] );
 		}
 
-		return !isAccesible;
+		return isAccessible;
 	}
 
 	#endregion
 
 	#region Random generation
 
+	/// <summary>
+	/// Generates a random float matrix using perlin noise.
+	/// </summary>
+	/// <param name="columns">Number of columns of the result matrix.</param>
+	/// <param name="rows">Number of rows of the result matrix.</param>
+	/// <param name="seed">Seed of the result. Preferaby not integer.</param>
+	/// <param name="octaves"></param>	// TODO
+	/// <param name="persistance"></param> 	// TODO
+	/// <param name="lacunarity"></param> 	// TODO
+	/// <param name="minValue">Minimum value. Infinity not allowed.</param>
+	/// <param name="maxValue">Maximum value. Infinity not allowed.</param>
+	/// <returns>A random float matrix with the columns and rows specified.</returns>
 	public static float[,] PerlinNoiseMap( int columns, int rows, float seed, float octaves, float persistance, float lacunarity, float minValue, float maxValue )
 	{
 		float[,] map = new float[columns, rows];
@@ -368,7 +447,18 @@ public static class MathFunctions
 		return map;
 	}
 
-	public static Vector2Int PseudorandomDirection( Vector2Int origin, Vector2Int lastDirection, System.Random randGenerator, int sameDirectionProbability, IsPositionAccesible isPositionAccesible )
+	/// <summary>
+	/// <para>Calculates a pseudo-random direction based on last direction and probability.</para>
+	/// <para>If the selected direction is impossible, choose other randomly.</para>
+	/// <para>If any direction is possible, returns Vector2Int.zero.</para>
+	/// </summary>
+	/// <param name="origin">Original position.</param>
+	/// <param name="lastDirection">Last direction. Must be a normalized vector.</param>
+	/// <param name="randGenerator">Random generator for the direction.</param>
+	/// <param name="sameDirectionProbability">Probability of conserve the lastDirection.</param>
+	/// <param name="isPositionAccessible">>Method to check if a position is accessible.</param>
+	/// <returns>The new direction or, if any is possible, Vector2Int.zero.</returns>
+	public static Vector2Int PseudorandomDirection( Vector2Int origin, Vector2Int lastDirection, System.Random randGenerator, int sameDirectionProbability, IsPositionAccessible isPositionAccessible )
 	{
 		Vector2Int nextDirection = Vector2Int.zero;
 		lastDirection.TransformToDirection();
@@ -377,7 +467,7 @@ public static class MathFunctions
 		bool useSameDirection = randGenerator.Next( 0, 100 ) <= sameDirectionProb;
 
 		// If is possible continue in the same direction ( not 0,0 )
-		if ( !lastDirection.Equals( Vector2Int.zero ) && useSameDirection && IsPossibleDirection( origin, lastDirection, isPositionAccesible ) )
+		if ( !lastDirection.Equals( Vector2Int.zero ) && useSameDirection && IsPossibleDirection( origin, lastDirection, isPositionAccessible ) )
 		{
 			nextDirection = lastDirection;
 		}
@@ -389,11 +479,11 @@ public static class MathFunctions
 			directions.Remove( lastDirection * -1 ); // By now, discard the opposite of last direction for avoid loops
 
 			Vector2Int possibleDirection;
-			while ( directions.Count > 0 && nextDirection.Equals( Vector2Int.zero ) )
+			while ( directions.Count > 0 && nextDirection == Vector2Int.zero )
 			{
 				possibleDirection = directions[randGenerator.Next( 0, directions.Count )];
 
-				if ( IsPossibleDirection( origin, possibleDirection, isPositionAccesible ) )
+				if ( IsPossibleDirection( origin, possibleDirection, isPositionAccessible ) )
 				{
 					nextDirection = possibleDirection;
 				}
@@ -405,7 +495,7 @@ public static class MathFunctions
 
 			// If any other direction is possible, check the opposite to last direction
 			possibleDirection = lastDirection * -1;
-			if ( nextDirection.Equals( Vector2Int.zero ) && IsPossibleDirection( origin, possibleDirection, isPositionAccesible ) )
+			if ( nextDirection.Equals( Vector2Int.zero ) && IsPossibleDirection( origin, possibleDirection, isPositionAccessible ) )
 			{
 				nextDirection = possibleDirection;
 			}
@@ -416,31 +506,66 @@ public static class MathFunctions
 
 	#endregion
 
-	#region Up scale matrix	
+	#region Matrix and array scaling up with interpolation
 
-	public static T[,] UpScaleMatrix<T>( Func<int, int, T> get, Vector2Int originalDim, Vector2Int resultDim, int upScale, Func<T, float, T> multiplyFunc, Func<T, T, T> sumFunc )
+	/// <summary>
+	/// <para>Scales up a generic matrix obtaining the intermediate values by interpolation.</para>
+	/// <para>Obtains the scale up factor using the resultDim by originalDim division. Divible dimensions are recomended ( to avoid repeated values in borders ), but not required.</para>
+	/// <para>Internally uses MathFunctions.ScaleUpMatrixValue.</para>
+	/// </summary>
+	/// <typeparam name="T">Type of the elements of the matrix.</typeparam>
+	/// <param name="get">Getter of values of the original matrix.</param>
+	/// <param name="originalDim">Dimension ( columns and rows ) of the original matrix.</param>
+	/// <param name="resultDim">Dimension ( columns and rows ) of the result matrix.</param>
+	/// <param name="multiplyFunc">Multiplication function for the interpolation. Must accept multiplication by values between 0 and 1 (both included).</param>
+	/// <param name="addFunc">Add function for the interpolation.</param>
+	/// <returns>The scaled up matrix.</returns>
+	public static T[,] ScaleUpMatrix<T>( Func<int, int, T> get, Vector2Int originalDim, Vector2Int resultDim, Func<T, float, T> multiplyFunc, Func<T, T, T> addFunc )
 	{
 		T[,] result = new T[resultDim.x, resultDim.y];
+		int scaleUp = (int)( ( (float)resultDim.x / originalDim.x + (float)resultDim.y / originalDim.y ) / 2f );
 
 		for ( int i = 0; i < resultDim.x; i++ )
 		{
 			for ( int j = 0; j < resultDim.y; j++ )
 			{
-				result[i, j] = UpScaleMatrixValue( get, upScale, i, j, originalDim, multiplyFunc, sumFunc );
+				result[i, j] = ScaleUpMatrixValue( get, scaleUp, i, j, originalDim, multiplyFunc, addFunc );
 			}
 		}
 
 		return result;
 	}
 
-	public static T UpScaleMatrixValue<T>( Func<int, int, T> get, int upScale, int col, int row, Vector2Int originalDim, Func<T, float, T> multiplyFunc, Func<T, T, T> sumFunc )
+	/// <summary>
+	/// Scales up a specific value of a generic matrix calculating the interpolation.
+	/// </summary>
+	/// <typeparam name="T">Type of the elements of the generic matrix.</typeparam>
+	/// <param name="get">Getter of values of the original matrix.</param>
+	/// <param name="scaleUpFactor">Multiply factor of the original dimension.</param>
+	/// <param name="col">Column of the value to calculate.</param>
+	/// <param name="row">Row of the value to calculate.</param>
+	/// <param name="originalDim">Dimension ( columns and rows ) of the original matrix.</param>
+	/// <param name="multiplyFunc">Multiplication function for the interpolation. Must accept multiplication by values between 0 and 1 (both included).</param>
+	/// <param name="addFunc">Add function for the interpolation.</param>
+	/// <returns>The scaled up value.</returns>
+	public static T ScaleUpMatrixValue<T>( Func<int, int, T> get, int scaleUpFactor, int col, int row, Vector2Int originalDim, Func<T, float, T> multiplyFunc, Func<T, T, T> addFunc )
 	{
-		float originalCol = Clamp( col / (float)upScale, 0, originalDim.x - 1 );
-		float originalRow = Clamp( row / (float)upScale, 0, originalDim.y - 1 );
-		return InterpolateValueInMatrix( get, originalCol, originalRow, multiplyFunc, sumFunc );
+		float originalCol = Clamp( col / (float)scaleUpFactor, 0, originalDim.x - 1 );
+		float originalRow = Clamp( row / (float)scaleUpFactor, 0, originalDim.y - 1 );
+		return InterpolateValueInMatrix( get, originalCol, originalRow, multiplyFunc, addFunc );
 	}
 
-	public static T InterpolateValueInMatrix<T>( Func<int, int, T> get, float col, float row, Func<T, float, T> multiplyFunc, Func<T, T, T> sumFunc )
+	/// <summary>
+	/// Interpolates the value of a decimal position ( column and row ) in a matrix.
+	/// </summary>
+	/// <typeparam name="T">Type of the elements of the matrix.</typeparam>
+	/// <param name="get">Getter of values of the matrix.</param>
+	/// <param name="col">Decimal column of the value to interpolate.</param>
+	/// <param name="row">Decimal row of the value to interpolate.</param>
+	/// <param name="multiplyFunc">Multiplication function for the interpolation. Must accept multiplication by values between 0 and 1 (both included).</param>
+	/// <param name="addFunc">Add function for the interpolation.</param>
+	/// <returns>The interpolated value.</returns>
+	public static T InterpolateValueInMatrix<T>( Func<int, int, T> get, float col, float row, Func<T, float, T> multiplyFunc, Func<T, T, T> addFunc )
 	{
 		T result;
 
@@ -452,15 +577,24 @@ public static class MathFunctions
 
 		result = multiplyFunc( multiplyFunc( get( matrixIntCol, matrixIntRow ), 1f - matrixDecimalCol ), 1f - matrixDecimalRow );
 		if ( matrixDecimalCol > 0 )
-			result = sumFunc( result, multiplyFunc( multiplyFunc( get( matrixIntCol + 1, matrixIntRow ), matrixDecimalCol ), 1f - matrixDecimalRow ) );
+			result = addFunc( result, multiplyFunc( multiplyFunc( get( matrixIntCol + 1, matrixIntRow ), matrixDecimalCol ), 1f - matrixDecimalRow ) );
 		if ( matrixDecimalRow > 0 )
-			result = sumFunc( result, multiplyFunc( multiplyFunc( get( matrixIntCol, matrixIntRow + 1 ), 1f - matrixDecimalCol ), matrixDecimalRow ) );
+			result = addFunc( result, multiplyFunc( multiplyFunc( get( matrixIntCol, matrixIntRow + 1 ), 1f - matrixDecimalCol ), matrixDecimalRow ) );
 		if ( matrixDecimalCol > 0 && matrixDecimalRow > 0 )
-			result = sumFunc( result, multiplyFunc( multiplyFunc( get( matrixIntCol + 1, matrixIntRow + 1 ), matrixDecimalCol ), matrixDecimalRow ) );
+			result = addFunc( result, multiplyFunc( multiplyFunc( get( matrixIntCol + 1, matrixIntRow + 1 ), matrixDecimalCol ), matrixDecimalRow ) );
 
 		return result;
 	}
 
+	/// <summary>
+	/// Interpolates the value of a decimal position in a array.
+	/// </summary>
+	/// <typeparam name="T">Type of the elements of the array.</typeparam>
+	/// <param name="get">Getter of values of the array.</param>
+	/// <param name="decimalIndex">Decimal position of the value to interpolate.</param>
+	/// <param name="multiplyFunc">Multiplication function for the interpolation. Must accept multiplication by values between 0 and 1 (both included).</param>
+	/// <param name="addFunc">Add function for the interpolation.</param>
+	/// <returns></returns>
 	public static T InterpolateValueInArray<T>( Func<int, T> get, float decimalIndex, Func<T, float, T> multiplyFunc, Func<T, T, T> sumFunc )
 	{
 		T result;
@@ -478,6 +612,9 @@ public static class MathFunctions
 
 	#region Spatial decomposition
 
+	/// <summary>
+	/// Struct to store the fundamental information of a sector : initial and final position as a quadrilateral.
+	/// </summary>
 	public struct QuadTreeSector
 	{
 		public Vector2Int Initial;
@@ -536,16 +673,35 @@ public static class MathFunctions
 			return Initial == obj.Initial && Final == obj.Final;
 		}
 
-		public static bool operator ==( QuadTreeSector a, QuadTreeSector b ) { return Equals( a, b ); }
+		public static bool operator ==( QuadTreeSector a, QuadTreeSector b ) { return a.Equals( b ); }
 
-		public static bool operator !=( QuadTreeSector a, QuadTreeSector b ) { return !Equals( a, b ); }
+		public static bool operator !=( QuadTreeSector a, QuadTreeSector b ) { return !a.Equals( b ); }
 	}
 
+	/// <summary>
+	/// Calculates the quadtree sectors of a square matrix with a power of two dimensions ( columns and rows ).
+	/// </summary>
+	/// <typeparam name="T">Type of the matrix values.</typeparam>
+	/// <param name="get">Getter of the matrix values.</param>
+	/// <param name="equals">Comparator of matrix elements. Must return true if a value is compared with himself.</param>
+	/// <param name="size">Size of the matrix ( columns and rows ). Must be power of two or a exception will be thrown.</param>
+	/// <param name="mergeSectors">If is true : some of the mergeable sectors ( equals and have a common size ) will be merged. Implies an additional cost but fewer sectors will be generated.</param>
+	/// <returns>List of the obtained sectors.</returns>
 	public static List<QuadTreeSector> QuadTree<T>( Func<int, int, T> get, Func<T, T, bool> equals, int size, bool mergeSectors )
 	{
 		return QuadTree( get, equals, new QuadTreeSector( 0, 0, size - 1, size - 1 ), mergeSectors );
 	}
 
+	/// <summary>
+	/// <para>Calculates the quadtree sectors of a square matrix sector with a power of two dimensions ( columns and rows ).</para>
+	/// <para>Is recursive.</para>
+	/// </summary>
+	/// <typeparam name="T">Type of the matrix values.</typeparam>
+	/// <param name="get">Getter of the matrix values.</param>
+	/// <param name="equals">Comparator of matrix elements. Must return true if a value is compared with himself.</param>
+	/// <param name="sector">Sector to apply the quadtree algorithm.</param>
+	/// <param name="mergeSectors">If is true : some of the mergeable sectors ( equals and have a common size ) will be merged. Implies an additional cost but fewer sectors will be generated.</param>
+	/// <returns>List of the obtained sectors.</returns>
 	public static List<QuadTreeSector> QuadTree<T>( Func<int, int, T> get, Func<T, T, bool> equals, QuadTreeSector sector, bool mergeSectors )
 	{
 		List<QuadTreeSector> result = new List<QuadTreeSector>();
@@ -600,6 +756,15 @@ public static class MathFunctions
 		return result;
 	}
 
+	/// <summary>
+	/// Checks a quadtree sector. Test if the sector is equal and calls MathFunctions.QuadTree if it isn't.
+	/// </summary>
+	/// <typeparam name="T">Type of the matrix values.</typeparam>
+	/// <param name="sector">Sector to check.</param>
+	/// <param name="get">Getter of the matrix values.</param>
+	/// <param name="equals">Comparator of matrix elements. Must return true if a value is compared with himself.</param>
+	/// <param name="mergeSectors">If the sectors will be merged. Used to pass it to MathFunctions.QuadTree if is called.</param>
+	/// <returns>List of the obtained sectors.</returns>
 	private static List<QuadTreeSector> QuadTreeSectorCheck<T>( QuadTreeSector sector, Func<int, int, T> get, Func<T, T, bool> equals, bool mergeSectors )
 	{
 		List<QuadTreeSector> result = new List<QuadTreeSector>();
@@ -616,6 +781,14 @@ public static class MathFunctions
 		return result;
 	}
 
+	/// <summary>
+	/// Check if a quadtree sector is completly equal. For that the first position is compared with all the other positions.
+	/// </summary>
+	/// <typeparam name="T">Type of the matrix values.</typeparam>
+	/// <param name="sector">Sector to check.</param>
+	/// <param name="get">Getter of the matrix values.</param>
+	/// <param name="equals">Comparator of matrix elements. Must return true if a value is compared with himself.</param>
+	/// <returns>If the sector is completely equal.</returns>
 	private static bool IsEqualQuadTreeSector<T>( QuadTreeSector sector, Func<int, int, T> get, Func<T, T, bool> equals )
 	{
 		bool equalGroup = true;
@@ -634,6 +807,14 @@ public static class MathFunctions
 		return equalGroup;
 	}
 
+	/// <summary>
+	/// Merge a list of quadtree sectors with other list of sectors of a positive position ( more to the right or down ).
+	/// </summary>
+	/// <typeparam name="T">Type of the matrix values.</typeparam>
+	/// <param name="baseSectors">Original list of sectors. Will be modified adding new sectors ( merged or not ).</param>
+	/// <param name="greatersSectors">Sectors to try to merge or, instead, add to baseSectors.</param>
+	/// <param name="get">Getter of the matrix values.</param>
+	/// <param name="equals">Comparator of matrix elements. Must return true if a value is compared with himself.</param>
 	private static void MergeQuadTreeSectorsPositive<T>( List<QuadTreeSector> baseSectors, List<QuadTreeSector> greatersSectors, Func<int, int, T> get, Func<T, T, bool> equals )
 	{
 		QuadTreeSector baseSector;
@@ -709,7 +890,7 @@ public static class MathFunctions
 		return ( value != 0 ) && ( ( value & ( value - 1 ) ) == 0 );
 	}
 
-	public static bool IsPossibleDirection( Vector2Int origin, Vector2Int direction, IsPositionAccesible isPositionAccesible )
+	public static bool IsPossibleDirection( Vector2Int origin, Vector2Int direction, IsPositionAccessible isPositionAccessible )
 	{
 		bool possible = true;
 		direction.TransformToDirection();
@@ -724,7 +905,7 @@ public static class MathFunctions
 		{
 			if ( !movementComponents[i].Equals( origin ) )
 			{
-				possible &= isPositionAccesible( movementComponents[i] );
+				possible &= isPositionAccessible( movementComponents[i] );
 			}
 		}
 
@@ -778,7 +959,7 @@ public static class MathFunctions
 		return dirToTarget;
 	}
 
-	public static bool IsTouchingTarget( Vector2Int origin, Vector2Int target, IsPositionAccesible isPositionAccesible )
+	public static bool IsTouchingTarget( Vector2Int origin, Vector2Int target, IsPositionAccessible isPositionAccessible )
 	{
 		bool isTouching = false;
 
@@ -801,7 +982,7 @@ public static class MathFunctions
 
 					for ( int i = 0; i < movementComponents.Length && isTouching; i++ )
 					{
-						isTouching &= isPositionAccesible( movementComponents[i] );
+						isTouching &= isPositionAccessible( movementComponents[i] );
 					}
 				}
 			}

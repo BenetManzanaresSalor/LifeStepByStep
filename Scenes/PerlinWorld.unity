@@ -166,7 +166,7 @@ MonoBehaviour:
   CellXsize: 3
   CellYsize: 1
   CellZsize: 3
-  MinAndMaxHeights: {x: 0, y: 75}
+  MinAndMaxHeights: {x: 0, y: 40}
   WorldObjects:
   - {fileID: 7928505122732006828, guid: ad7b456410e9f1c4194ed61395cf5853, type: 3}
   - {fileID: 9110332486386622728, guid: 57f4a5c313301aa40b1fa56af54e78c2, type: 3}
@@ -182,7 +182,7 @@ MonoBehaviour:
   RandomMapSeed: 1
   MapSeed: 122
   MapLevel: 6
-  WaterLevel: 30
+  WaterLevel: 20
   ObjectProbability: 3
   MapDivisor: 8
   Octaves: 4
@@ -199,7 +199,7 @@ GameObject:
   - component: {fileID: 115277239}
   - component: {fileID: 115277238}
   m_Layer: 0
-  m_Name: GameMaster
+  m_Name: WorldController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
