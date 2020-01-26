@@ -188,7 +188,7 @@ public abstract class Entity : WorldObject
 		if ( Target != null )
 		{
 			isTouching = ( IsTargetAccesible ) ? WorldPosition2D == Target.WorldPosition2D : 
-				MathFunctions.IsTouchingTarget( WorldPosition2D, Target.WorldPosition2D, World.IsPositionAccesible );
+				MathFunctions.IsTouchingObjective( WorldPosition2D, Target.WorldPosition2D, World.IsPositionAccesible );
 		}
 
 		return isTouching;
@@ -246,7 +246,7 @@ public abstract class Entity : WorldObject
 		List<Vector2Int> PathToTarget = MathFunctions.Pathfinding( WorldPosition2D, Target.WorldPosition2D, World.IsPositionAccesible, (int)SearchRadius * 2 );
 
 		// If a path to target is possible
-		if ( PathToTarget.Count > 0 && MathFunctions.IsTouchingTarget( PathToTarget[PathToTarget.Count - 1], Target.WorldPosition2D, World.IsPositionAccesible ) )
+		if ( PathToTarget.Count > 0 && MathFunctions.IsTouchingObjective( PathToTarget[PathToTarget.Count - 1], Target.WorldPosition2D, World.IsPositionAccesible ) )
 		{
 			// Try movement
 			movementDone = World.MoveToCell( this, PathToTarget[0] );

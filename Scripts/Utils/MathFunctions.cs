@@ -184,7 +184,7 @@ public static class MathFunctions
 		path = DirectPath( origin, objective, isPositionAccessible );
 
 		// If the direct path not arrives to target
-		if ( path.Count == 0 || !IsTouchingTarget( path[path.Count - 1], objective, isPositionAccessible ) )
+		if ( path.Count == 0 || !IsTouchingObjective( path[path.Count - 1], objective, isPositionAccessible ) )
 		{
 			path = AstarPath( origin, objective, isPositionAccessible, maxPathLenght );
 		}
@@ -293,7 +293,7 @@ public static class MathFunctions
 			}
 
 			// Check end of path
-			if ( IsTouchingTarget( currentPositionInPath.Position, objective, isPositionAccessible ) )
+			if ( IsTouchingObjective( currentPositionInPath.Position, objective, isPositionAccessible ) )
 			{
 				objectiveReached = true;
 			}
@@ -384,6 +384,136 @@ public static class MathFunctions
 		}
 
 		return isAccessible;
+	}
+
+	/// <summary>
+	/// <para>Checks if a movement from a origin to a specific direction ( in some of the eight possible directions ) is possible.</para>
+	/// <para>To check it the method observe the adjacents possitions, avoiding a movement that go throught a inaccesible position.</para>
+	/// </summary>
+	/// <param name="origin">Original position.</param>
+	/// <param name="direction">Direction of the movement.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <returns>If is a possible direction.</returns>
+	public static bool IsPossibleDirection( Vector2Int origin, Vector2Int direction, IsPositionAccessible isPositionAccessible )
+	{
+		bool possible = true;
+		direction.TransformToDirection();
+
+		Vector2Int[] movementComponents = {
+			origin + Vector2Int.right * direction.x,
+			origin + Vector2Int.up * direction.y,
+			origin + direction
+		};
+
+		for ( int i = 0; i < movementComponents.Length && possible; i++ )
+		{
+			if ( !movementComponents[i].Equals( origin ) )
+			{
+				possible &= isPositionAccessible( movementComponents[i] );
+			}
+		}
+
+		return possible;
+	}
+
+	// TODO : Add a version with min square radius
+	/// <summary>
+	/// Obtains the adjacent positions in a square radius, excluding the center.
+	/// </summary>
+	/// <param name="center">Center of the square area.</param>
+	/// <param name="squareRadius">Radius of the square area.</param>
+	/// <returns>List of the positions in the square area.</returns>
+	public static List<Vector2Int> NearlyPositions( Vector2Int center, uint squareRadius )
+	{
+		List<Vector2Int> positions = new List<Vector2Int>();
+
+		Vector2Int areaTopLeftCorner = center + Vector2Int.one * -1 * (int)squareRadius;
+		Vector2Int position;
+		for ( int x = 0; x <= squareRadius * 2; x++ )
+		{
+			for ( int y = 0; y <= squareRadius * 2; y++ )
+			{
+				position = areaTopLeftCorner + new Vector2Int( x, y );
+				if ( position != center )
+				{
+					positions.Add( position );
+				}
+			}
+		}
+
+		return positions;
+	}
+
+	/// <summary>
+	/// Checks if the objective is accesible from the origin position in a single movement.
+	/// </summary>
+	/// <param name="origin">Original position.</param>
+	/// <param name="objective">Objective position.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <returns>If the objective is accesible from the origin position in a single movement.</returns>
+	public static bool IsTouchingObjective( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible )
+	{
+		bool isTouching = false;
+
+		if ( origin.Equals( objective ) )
+		{
+			isTouching = true;
+		}
+		else
+		{
+			Vector2Int direction = DirToObjectiveInRadius( origin, objective, 1 );
+
+			if ( direction != Vector2Int.zero )
+			{
+				isTouching = true;
+
+				// If is a diagonal
+				if ( direction.x != 0 && direction.y != 0 )
+				{
+					Vector2Int[] movementComponents = { origin + Vector2Int.right * direction.x, origin + Vector2Int.up * direction.y };
+
+					for ( int i = 0; i < movementComponents.Length && isTouching; i++ )
+					{
+						isTouching &= isPositionAccessible( movementComponents[i] );
+					}
+				}
+			}
+		}
+
+		return isTouching;
+	}
+
+	/// <summary>
+	/// <para>Obtains the direction form origin to objective only if the objective is in the square radius.</para>
+	/// <para>If the objective is not found, returns the direction (0,0).</para>
+	/// </summary>
+	/// <param name="origin">Original position and center of the square area.</param>
+	/// <param name="objective">Objective position.</param>
+	/// <param name="squareRadius">Radius of the square area.</param>
+	/// <returns>The direction to the objective if it is in the square area. Otherwise, the direction (0,0) is returned.</returns>
+	private static Vector2Int DirToObjectiveInRadius( Vector2Int origin, Vector2Int objective, uint squareRadius )
+	{
+		Vector2Int dirToObjective = Vector2Int.zero;
+		bool positionFound = false;
+		Vector2Int areaTopLeftCorner = origin + Vector2Int.one * -1 * (int)squareRadius;
+
+		Vector2Int pos;
+		Vector2Int offset;
+		for ( int x = 0; x <= squareRadius * 2 && !positionFound; x++ )
+		{
+			for ( int y = 0; y <= squareRadius * 2 && !positionFound; y++ )
+			{
+				offset = new Vector2Int( x, y );
+				pos = areaTopLeftCorner + offset;
+				if ( pos == objective )
+				{
+					dirToObjective = pos - origin;
+					positionFound = false;
+				}
+			}
+		}
+
+		return dirToObjective;
 	}
 
 	#endregion
@@ -613,7 +743,7 @@ public static class MathFunctions
 	#region Spatial decomposition
 
 	/// <summary>
-	/// Struct to store the fundamental information of a sector : initial and final position as a quadrilateral.
+	/// Struct to store the fundamental information of a sector: initial and final position as a quadrilateral.
 	/// </summary>
 	public struct QuadTreeSector
 	{
@@ -627,10 +757,10 @@ public static class MathFunctions
 			Final = final;
 		}
 
-		public QuadTreeSector( int x1, int y1, int x2, int y2 )
+		public QuadTreeSector( int initialX, int initialY, int finalX, int finalY )
 		{
-			Initial = new Vector2Int( x1, y1 );
-			Final = new Vector2Int( x2, y2 );
+			Initial = new Vector2Int( initialX, initialY );
+			Final = new Vector2Int( finalX, finalY );
 		}
 
 		public override string ToString()
@@ -638,7 +768,17 @@ public static class MathFunctions
 			return Initial + " " + Final;
 		}
 
-		public static bool IsMergeableNotInvertible<T>( QuadTreeSector original, QuadTreeSector other, Func<int, int, T> get, Func<T, T, bool> equals )
+		/// <summary>
+		/// <para>Checks if a sector is mergeable with other assuming that the other is positioned in at positive direction ( right, bottom or both ).</para>
+		/// <para>Therefore, if a sector if mergeable with other, according to this method the same sectors inverted will not be mergeables.</para>
+		/// </summary>
+		/// <typeparam name="T">Type of the quadtree matrix values.</typeparam>
+		/// <param name="original">Original sector.</param>
+		/// <param name="other">Other sector.</param>
+		/// <param name="get">Getter of the quadtree matrix values.</param>
+		/// <param name="equals">Comparator of quadtree matrix elements. Must return true if a value is compared with himself.</param>
+		/// <returns>If the original sector is mergeable with other assuming that the other is positioned in at positive direction ( right, bottom or both ).</returns>
+		public static bool AreMergeableNotInvertible<T>( QuadTreeSector original, QuadTreeSector other, Func<int, int, T> get, Func<T, T, bool> equals )
 		{
 			// TODO : Check if is really mergeable when contained
 			bool notContained = original.Initial != other.Initial && original.Final != other.Final && original.Initial != other.Final && original.Final != other.Initial;
@@ -648,15 +788,23 @@ public static class MathFunctions
 			return notContained && ( horitzontalMatch || verticalMatch ) && equalsValues;
 		}
 
+		/// <summary>
+		/// Tries a merge between the current sector and other. If the merge is not possible, throws a Exception.
+		/// </summary>
+		/// <typeparam name="T">Type of the quadtree matrix values.</typeparam>
+		/// <param name="other">Other sector.</param>
+		/// <param name="get">Getter of the quadtree matrix values.</param>
+		/// <param name="equals">Comparator of quadtree matrix elements. Must return true if a value is compared with himself.</param>
+		/// <returns>The merged sector if is possible. Else, throws a exception.</returns>
 		public QuadTreeSector TryMerge<T>( QuadTreeSector other, Func<int, int, T> get, Func<T, T, bool> equals )
 		{
 			QuadTreeSector result;
 
-			if ( IsMergeableNotInvertible( this, other, get, equals ) )
+			if ( AreMergeableNotInvertible( this, other, get, equals ) )
 			{
 				result = new QuadTreeSector( this.Initial, other.Final );
 			}
-			else if ( IsMergeableNotInvertible( other, this, get, equals ) )
+			else if ( AreMergeableNotInvertible( other, this, get, equals ) )
 			{
 				result = new QuadTreeSector( other.Initial, this.Final );
 			}
@@ -668,9 +816,15 @@ public static class MathFunctions
 			return result;
 		}
 
-		public bool Equals( QuadTreeSector obj )
+		public override bool Equals( object obj )
 		{
-			return Initial == obj.Initial && Final == obj.Final;
+			QuadTreeSector? other = obj as QuadTreeSector?;
+			return other != null && Initial == other.Value.Initial && Final == other.Value.Final;
+		}
+
+		public override int GetHashCode()
+		{
+			return Initial.GetHashCode() + Final.GetHashCode();
 		}
 
 		public static bool operator ==( QuadTreeSector a, QuadTreeSector b ) { return a.Equals( b ); }
@@ -827,7 +981,7 @@ public static class MathFunctions
 			{
 				baseSector = baseSectors[j];
 
-				if ( QuadTreeSector.IsMergeableNotInvertible( baseSector, greaterSector, get, equals ) )
+				if ( QuadTreeSector.AreMergeableNotInvertible( baseSector, greaterSector, get, equals ) )
 				{
 					baseSectors[j] = new QuadTreeSector( baseSector.Initial, greaterSector.Final );
 					isMerged = true;
@@ -841,6 +995,12 @@ public static class MathFunctions
 
 	#region Common	
 
+	/// <summary>
+	/// Founds the maximum value of a elements list.
+	/// </summary>
+	/// <typeparam name="T">Type that implements IComparable<T></typeparam>
+	/// <param name="elementsList">List of elements/parameters.</param>
+	/// <returns>The maxium value of elementsList.</returns>
 	public static T Max<T>( params T[] elementsList ) where T : IComparable<T>
 	{
 		T maximum = elementsList[0];
@@ -858,6 +1018,12 @@ public static class MathFunctions
 		return maximum;
 	}
 
+	/// <summary>
+	/// Founds the minimum value of a elements list.
+	/// </summary>
+	/// <typeparam name="T">Type that implements IComparable<T></typeparam>
+	/// <param name="elementsList">List of elements/parameters.</param>
+	/// <returns>The minimum value of elementsList.</returns>
 	public static T Min<T>( params T[] elementsList ) where T : IComparable<T>
 	{
 		T maximum = elementsList[0];
@@ -875,6 +1041,14 @@ public static class MathFunctions
 		return maximum;
 	}
 
+	/// <summary>
+	/// Clamps a value in a range.
+	/// </summary>
+	/// <typeparam name="T">Type that implements IComparable<T></typeparam>
+	/// <param name="value">Value to clamp.</param>
+	/// <param name="inclusiveMinimum">Minimum value of the range (included).</param>
+	/// <param name="inclusiveMaximum">Maximum value of the range (included).</param>
+	/// <returns>The value clamped in the range.</returns>
 	public static T Clamp<T>( T value, T inclusiveMinimum, T inclusiveMaximum ) where T : IComparable<T>
 	{
 		T result = value;
@@ -885,121 +1059,35 @@ public static class MathFunctions
 		return result;
 	}
 
+	/// <summary>
+	/// Checks if a integer is power of two.
+	/// </summary>
+	/// <param name="value">Value to check.</param>
+	/// <returns>If the integer is power of two.</returns>
 	public static bool IsPowerOfTwo( int value )
 	{
 		return ( value != 0 ) && ( ( value & ( value - 1 ) ) == 0 );
-	}
-
-	public static bool IsPossibleDirection( Vector2Int origin, Vector2Int direction, IsPositionAccessible isPositionAccessible )
-	{
-		bool possible = true;
-		direction.TransformToDirection();
-
-		Vector2Int[] movementComponents = {
-			origin + Vector2Int.right * direction.x,
-			origin + Vector2Int.up * direction.y,
-			origin + direction
-		};
-
-		for ( int i = 0; i < movementComponents.Length && possible; i++ )
-		{
-			if ( !movementComponents[i].Equals( origin ) )
-			{
-				possible &= isPositionAccessible( movementComponents[i] );
-			}
-		}
-
-		return possible;
-	}
-
-	// TODO : Add a version with min square radius
-	public static List<Vector2Int> NearlyPositions( Vector2Int center, uint squareRadius )
-	{
-		List<Vector2Int> positions = new List<Vector2Int>();
-
-		Vector2Int areaTopLeftCorner = center + Vector2Int.one * -1 * (int)squareRadius;
-		Vector2Int position;
-		for ( int x = 0; x <= squareRadius * 2; x++ )
-		{
-			for ( int y = 0; y <= squareRadius * 2; y++ )
-			{
-				position = areaTopLeftCorner + new Vector2Int( x, y );
-				if ( position != center )
-				{
-					positions.Add( position );
-				}
-			}
-		}
-
-		return positions;
-	}
-
-	public static Vector2Int DirToTargetInRadius( Vector2Int origin, Vector2Int target, uint squareRadius )
-	{
-		Vector2Int dirToTarget = Vector2Int.zero;
-		bool positionFound = false;
-		Vector2Int areaTopLeftCorner = origin + Vector2Int.one * -1 * (int)squareRadius;
-
-		Vector2Int pos;
-		Vector2Int offset;
-		for ( int x = 0; x <= squareRadius * 2 && !positionFound; x++ )
-		{
-			for ( int y = 0; y <= squareRadius * 2 && !positionFound; y++ )
-			{
-				offset = new Vector2Int( x, y );
-				pos = areaTopLeftCorner + offset;
-				if ( pos == target )
-				{
-					dirToTarget = pos - origin;
-					positionFound = false;
-				}
-			}
-		}
-
-		return dirToTarget;
-	}
-
-	public static bool IsTouchingTarget( Vector2Int origin, Vector2Int target, IsPositionAccessible isPositionAccessible )
-	{
-		bool isTouching = false;
-
-		if ( origin.Equals( target ) )
-		{
-			isTouching = true;
-		}
-		else
-		{
-			Vector2Int direction = DirToTargetInRadius( origin, target, 1 );
-
-			if ( direction != Vector2Int.zero )
-			{
-				isTouching = true;
-
-				// If is a diagonal
-				if ( direction.x != 0 && direction.y != 0 )
-				{
-					Vector2Int[] movementComponents = { origin + Vector2Int.right * direction.x, origin + Vector2Int.up * direction.y };
-
-					for ( int i = 0; i < movementComponents.Length && isTouching; i++ )
-					{
-						isTouching &= isPositionAccessible( movementComponents[i] );
-					}
-				}
-			}
-		}
-
-		return isTouching;
 	}
 
 	#endregion
 
 	#region Extended methods
 
+	/// <summary>
+	/// Obtains the euclidean distance from current vector to other position.
+	/// </summary>
+	/// <param name="a">Current position.</param>
+	/// <param name="b">Other position.</param>
+	/// <returns>The euclidean distance between positions.</returns>
 	public static float Distance( this Vector2Int a, Vector2Int b )
 	{
-		return ( a - b ).magnitude;
+		return ( b - a ).magnitude;
 	}
 
+	/// <summary>
+	/// Transforms current vector to a discrete direction ( values in range [-1,1] ).
+	/// </summary>
+	/// <param name="vector">Vector transformed to direction.</param>
 	public static void TransformToDirection( this Vector2Int vector )
 	{
 		vector.x = Clamp( vector.x, -1, 1 );
