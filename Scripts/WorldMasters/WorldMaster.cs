@@ -8,7 +8,6 @@ public abstract class WorldMaster : MonoBehaviour
 
 	#region Constants
 
-	public const int VertexsByBaseCell = 24;
 	public const int MaxVerticesByMesh = 65536;
 
 	#endregion
@@ -16,9 +15,7 @@ public abstract class WorldMaster : MonoBehaviour
 	#region Settings	
 
 	[Header( "World master global settings" )]
-	[SerializeField] protected float CellXsize;
-	[SerializeField] protected float CellYsize;
-	[SerializeField] protected float CellZsize;
+	[SerializeField] protected Vector3 CellSize = Vector3.one;
 	[SerializeField] protected Vector2Int MinAndMaxHeights = new Vector2Int( 0, 1 );
 	[SerializeField] protected WorldObject[] WorldObjects;
 
@@ -139,10 +136,10 @@ public abstract class WorldMaster : MonoBehaviour
 		int numZCells = endPos.z - iniPos.z + 1;
 
 		// Set vertexs
-		vertices.Add( currentCellPos + new Vector3( -CellXsize * numXCells / 2f, 0, -CellZsize * numZCells / 2f ) );
-		vertices.Add( currentCellPos + new Vector3( CellXsize * numXCells / 2f, 0, -CellZsize * numZCells / 2f ) );
-		vertices.Add( currentCellPos + new Vector3( CellXsize * numXCells / 2f, 0, CellZsize * numZCells / 2f ) );
-		vertices.Add( currentCellPos + new Vector3( -CellXsize * numXCells / 2f, 0, CellZsize * numZCells / 2f ) );
+		vertices.Add( currentCellPos + new Vector3( -CellSize.x * numXCells / 2f, 0, -CellSize.z * numZCells / 2f ) );
+		vertices.Add( currentCellPos + new Vector3( CellSize.x * numXCells / 2f, 0, -CellSize.z * numZCells / 2f ) );
+		vertices.Add( currentCellPos + new Vector3( CellSize.x * numXCells / 2f, 0, CellSize.z * numZCells / 2f ) );
+		vertices.Add( currentCellPos + new Vector3( -CellSize.x * numXCells / 2f, 0, CellSize.z * numZCells / 2f ) );
 
 		// Set triangles
 		triangles.Add( vertices.Count - 4 );
@@ -204,10 +201,10 @@ public abstract class WorldMaster : MonoBehaviour
 			}
 
 			// Set border vertexs
-			vertices.Add( cellRealPos + new Vector3( CellXsize * xMultipler / 2f, borderCellHeightDiff, CellZsize * zMultipler / 2f ) );
-			vertices.Add( cellRealPos + new Vector3( CellXsize / 2f, borderCellHeightDiff, CellZsize / 2f ) );
-			vertices.Add( cellRealPos + new Vector3( CellXsize / 2f, 0, CellZsize / 2f ) );
-			vertices.Add( cellRealPos + new Vector3( CellXsize * xMultipler / 2f, 0, CellZsize * zMultipler / 2f ) );
+			vertices.Add( cellRealPos + new Vector3( CellSize.x * xMultipler / 2f, borderCellHeightDiff, CellSize.z * zMultipler / 2f ) );
+			vertices.Add( cellRealPos + new Vector3( CellSize.x / 2f, borderCellHeightDiff, CellSize.z / 2f ) );
+			vertices.Add( cellRealPos + new Vector3( CellSize.x / 2f, 0, CellSize.z / 2f ) );
+			vertices.Add( cellRealPos + new Vector3( CellSize.x * xMultipler / 2f, 0, CellSize.z * zMultipler / 2f ) );
 
 			// Set border triangles
 			if ( toRight )
@@ -590,7 +587,7 @@ public abstract class WorldMaster : MonoBehaviour
 
 	public virtual Vector3 WorldToRealPosition( Vector3Int worldPosition3D )
 	{
-		return transform.position + new Vector3( worldPosition3D.x * CellXsize, worldPosition3D.y * CellYsize, worldPosition3D.z * CellZsize );
+		return transform.position + new Vector3( worldPosition3D.x * CellSize.x, worldPosition3D.y * CellSize.y, worldPosition3D.z * CellSize.z );
 	}
 
 	public virtual WorldObject GetCellContent( Vector2Int position )

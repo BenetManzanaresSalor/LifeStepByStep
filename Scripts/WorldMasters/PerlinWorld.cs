@@ -79,9 +79,9 @@ public class PerlinWorld : WorldMaster
 
 	public override Vector3 WorldToRealPosition( Vector3Int worldPosition3D )
 	{
-		return transform.position + new Vector3( worldPosition3D.x * CellXsize,
-			MathFunctions.Max( worldPosition3D.y, WaterLevel ) * CellYsize,
-			worldPosition3D.z * CellZsize );
+		return transform.position + new Vector3( worldPosition3D.x * CellSize.x,
+			MathFunctions.Max( worldPosition3D.y, WaterLevel ) * CellSize.y,
+			worldPosition3D.z * CellSize.z );
 	}
 
 	#endregion
