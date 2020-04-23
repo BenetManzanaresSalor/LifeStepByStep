@@ -196,8 +196,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1235770657}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: -0.17806233, y: 0.3902721, z: -0.07718337, w: -0.90001345}
+  m_LocalPosition: {x: 67.96925, y: 29.059076, z: -33.144016}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -233,15 +233,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CellSize: {x: 2, y: 1, z: 2}
+  ChunkSizeLevel: 6
+  ChunkRenderDistance: 1
   RenderMaterial: {fileID: 2100000, guid: 3d0ecbbb22b864646875e34c59e6541b, type: 2}
   TextureColumnsAndRows: {x: 2, y: 3}
   TextureMarginRelation: 3
   UseSplitAndMerge: 1
   TerrainDimension: 128
-  MinAndMaxHeights: {x: 0, y: 10}
-  RandomMapSeed: 0
+  MapDivisor: 4
+  MinAndMaxHeights: {x: 0, y: 6}
+  RandomMapSeed: 1
   MapSeed: 33
-  MapDivisor: 8
   Octaves: 4
   Persistance: 0.5
   Lacunarity: 0.2

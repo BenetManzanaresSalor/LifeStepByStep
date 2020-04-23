@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 {
@@ -8,19 +6,17 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 
 	#region Settings	
 
-	[Header( "Dimensions settings" )]
-	[SerializeField] [Range( 1, 256 )] protected int TerrainDimension;
-	[SerializeField] protected Vector2Int MinAndMaxHeights = new Vector2Int( 0, 1 );
-
 	[Header( "Random generation settings" )]
-	[SerializeField] protected bool RandomMapSeed = true;
-	[SerializeField] protected float MapSeed;		
+	[SerializeField] [Range( 1, 256 )] protected int TerrainDimension = 16;
 	[SerializeField] [Range( 1, 128 )] protected int MapDivisor;
+	[SerializeField] protected Vector2Int MinAndMaxHeights = new Vector2Int( 0, 1 );
+	[SerializeField] protected bool RandomMapSeed = true;
+	[SerializeField] protected float MapSeed;	
 	[SerializeField] protected int Octaves = 4;
 	[SerializeField] protected float Persistance = 0.5f;
 	[SerializeField] protected float Lacunarity = 0.2f;
 
-	[Header( "LC_Terrain Render settings" )]
+	[Header( "Additional render settings" )]
 	[SerializeField] protected LC_RenderType RendererType = LC_RenderType.SMOOTHING;
 	[SerializeField] [Range( 1, 10 )] protected int SmoothingSize = 2;
 
@@ -40,24 +36,23 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 	protected override void Start()
 	{
 		RandomGenerator = new System.Random();
+		CreateMap();
 		base.Start();
 	}
 
-	protected override void CreateMap( out Vector2Int terrainDimensions )
+	protected virtual void CreateMap()
 	{
 		if ( RandomMapSeed ) MapSeed = (float)RandomGenerator.NextDouble() * 100f;
 
-		HeightsMap = MathFunctions.PerlinNoiseMap( 
+		HeightsMap = MathFunctions.PerlinNoiseMap(
 			TerrainDimension / MapDivisor,
 			TerrainDimension / MapDivisor,
 			MapSeed,
 			Octaves, Persistance, Lacunarity,
 			MinAndMaxHeights.x, MinAndMaxHeights.y );
-
-		terrainDimensions = Vector2Int.one * TerrainDimension;
 	}
 
-	protected override LC_Cell CreateCell( int x, int z )
+	public override LC_Cell CreateCell( int x, int z )
 	{
 		Vector3Int terrainPosition = new Vector3Int( x,
 			Mathf.RoundToInt( MathFunctions.ScaleUpMatrixValue(
@@ -68,44 +63,49 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 			z );
 
 		return new LC_Cell( terrainPosition );
-	}	
+	}
 
-	protected override Vector2Int GetTexturePos( LC_Cell cell )
+	#endregion
+
+	#region Render
+
+	protected override Vector2Int CreateTexPos( LC_Cell cell, LC_Chunk chunk, LC_Cell[,] cells )
 	{
 		float value;
 
 		switch ( RendererType )
 		{
 			case LC_RenderType.SMOOTHING:
-				value = GetSmoothingRenderValue( cell );
+				value = GetSmoothingRenderValue( cell, chunk, cells );
 				break;
 			case LC_RenderType.HEIGHT:
 				value = GetHeightRenderValue( cell );
 				break;
-			default: value = 0;
+			default:
+				value = 0;
 				break;
 		}
 
 		int y = (int)Mathf.Clamp( TextureColumnsAndRows.y * value, 0, TextureColumnsAndRows.y - 1 );
 
-		return new Vector2Int(0, y);
+		return new Vector2Int( 0, y );
 	}
 
 	protected virtual float GetHeightRenderValue( LC_Cell cell )
 	{
-		return Mathf.InverseLerp( MinAndMaxHeights.x, MinAndMaxHeights.y, cell.TerrainPosition.y );
+		return Mathf.InverseLerp( MinAndMaxHeights.x, MinAndMaxHeights.y, cell.TerrainPos.y );
 	}
 
-	protected virtual float GetSmoothingRenderValue( LC_Cell cell )
+	protected virtual float GetSmoothingRenderValue( LC_Cell cell, LC_Chunk chunk, LC_Cell[,] cells )
 	{
 		float value = GetHeightRenderValue( cell );
-		Vector2Int terrainPos = new Vector2Int(cell.TerrainPosition.x, cell.TerrainPosition.z);
+		Vector2Int chunkPos = chunk.CellPosToChunk( cell.TerrainPos );
 
 		int numCells = 1;
 		LC_Cell otherCell;
-		foreach ( Vector2Int pos in MathFunctions.NearlyPositions( terrainPos, (uint)SmoothingSize ) )
+		foreach ( Vector2Int pos in MathFunctions.NearlyPositions( chunkPos, (uint)SmoothingSize ) )
 		{
-			otherCell = GetCell(pos);			
+			otherCell = GetChunkCell( pos, cells );
 
 			if ( otherCell != null )
 			{
@@ -116,6 +116,6 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 
 		return value / numCells;
 	}
-	
+
 	#endregion
 }
