@@ -208,7 +208,7 @@ public abstract class Entity : WorldObject
 		WorldObject currentWorldObject;
 		float currentDistance;
 
-		foreach ( Vector2Int position in MathFunctions.NearlyPositions( WorldPosition2D, SearchRadius ) )
+		foreach ( Vector2Int position in MathFunctions.AroundPositions( WorldPosition2D, SearchRadius ) )
 		{
 			currentWorldObject = World.GetCellContent( position );	// TODO : Make possible search WorldCell
 

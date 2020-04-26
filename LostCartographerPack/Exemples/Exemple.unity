@@ -136,7 +136,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &596646709
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -151,11 +151,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CellSize: {x: 2, y: 1, z: 2}
   ChunkSizeLevel: 5
-  ChunkRenderDistance: 0
+  ChunkRenderDistance: 1
+  Player: {fileID: 1819329498}
   RenderMaterial: {fileID: 2100000, guid: 3d0ecbbb22b864646875e34c59e6541b, type: 2}
-  TerrainSizeLevel: 5
-  MapDivisor: 8
-  MinAndMaxHeights: {x: 0, y: 20}
+  TerrainSizeLevel: 8
+  MapDivisor: 30
+  MinAndMaxHeights: {x: 0, y: 50}
   RandomMapSeed: 0
   MapSeed: 54.4915
   Octaves: 4
@@ -196,7 +197,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1208001914
 Transform:
   m_ObjectHideFlags: 0
@@ -225,11 +226,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CellSize: {x: 2, y: 1, z: 2}
   ChunkSizeLevel: 5
-  ChunkRenderDistance: 0
+  ChunkRenderDistance: 1
+  Player: {fileID: 1819329498}
   RenderMaterial: {fileID: 2100000, guid: 3d0ecbbb22b864646875e34c59e6541b, type: 2}
-  TerrainSizeLevel: 5
-  MapDivisor: 8
-  MinAndMaxHeights: {x: 0, y: 20}
+  TerrainSizeLevel: 8
+  MapDivisor: 30
+  MinAndMaxHeights: {x: 0, y: 50}
   RandomMapSeed: 0
   MapSeed: 54.4915
   Octaves: 4
@@ -264,7 +266,7 @@ PrefabInstance:
     - target: {fileID: 2248012419888202956, guid: 34a88c5a1209729478a3f9ed8951fc6a,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 10
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2248012419888202956, guid: 34a88c5a1209729478a3f9ed8951fc6a,
         type: 3}
@@ -314,6 +316,12 @@ PrefabInstance:
     m_RemovedComponents:
     - {fileID: 2248012421118770675, guid: 34a88c5a1209729478a3f9ed8951fc6a, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 34a88c5a1209729478a3f9ed8951fc6a, type: 3}
+--- !u!4 &1819329498 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2248012419888202956, guid: 34a88c5a1209729478a3f9ed8951fc6a,
+    type: 3}
+  m_PrefabInstance: {fileID: 1815823585}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1835653123
 GameObject:
   m_ObjectHideFlags: 0

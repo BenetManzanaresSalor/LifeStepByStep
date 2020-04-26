@@ -151,7 +151,7 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 
 		int numCells = 1;
 		LC_Cell otherCell;
-		foreach ( Vector2Int pos in MathFunctions.NearlyPositions( cellChunkPos, (uint)SmoothingSize ) )
+		foreach ( Vector2Int pos in MathFunctions.AroundPositions( cellChunkPos, (uint)SmoothingSize ) )
 		{
 			otherCell = GetChunkCell( pos, cells );
 

@@ -69,7 +69,7 @@ public class WorldCell
 
 		WorldCell possibleEffector;
 		float possibleEffectorDistance;
-		foreach ( Vector2Int position in MathFunctions.NearlyPositions( WorldPosition2D, (uint)range ) )
+		foreach ( Vector2Int position in MathFunctions.AroundPositions( WorldPosition2D, (uint)range ) )
 		{
 			possibleEffector = getWorldCell( position );
 			possibleEffectorDistance = WorldPosition2D.Distance( position );

@@ -423,7 +423,7 @@ public static class MathFunctions
 	/// <param name="center">Center of the square area.</param>
 	/// <param name="squareRadius">Radius of the square area.</param>
 	/// <returns>List of the positions in the square area.</returns>
-	public static List<Vector2Int> NearlyPositions( Vector2Int center, uint squareRadius )
+	public static List<Vector2Int> AroundPositions( Vector2Int center, uint squareRadius )
 	{
 		List<Vector2Int> positions = new List<Vector2Int>();
 

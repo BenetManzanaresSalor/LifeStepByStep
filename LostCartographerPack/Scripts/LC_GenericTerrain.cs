@@ -17,6 +17,7 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 	[SerializeField] protected Vector3 CellSize = Vector3.one;
 	[SerializeField] [Range( 1, 8 )] protected int ChunkSizeLevel = 4;
 	[SerializeField] [Range( 0, 128 )] protected int ChunkRenderDistance = 4;
+	[SerializeField] protected Transform Player;
 	[SerializeField] protected Material RenderMaterial;
 
 
@@ -25,7 +26,9 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 	#region Function attributes
 
 	protected int ChunkSize;
-	protected GameObject[,] Chunks;
+	protected Vector2Int PlayerChunkPos;
+	protected float ChunkRenderRealDistance;
+	protected Dictionary<Vector2Int, LC_Chunk> LoadedChunks;
 	protected int MaxVerticesPerRenderElem = 12;
 	protected List<Vector3> vertices;
 	protected List<int> triangles;
@@ -40,16 +43,22 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 	protected virtual void Start()
 	{
 		ChunkSize = (int)Mathf.Pow( 2, ChunkSizeLevel );
-		CreateTerrain();
+
+		ChunkRenderRealDistance = ChunkRenderDistance * ChunkSize * Mathf.Max( CellSize.x, CellSize.z );
+		LoadedChunks = new Dictionary<Vector2Int, LC_Chunk>();
+
+		PlayerChunkPos = RealPosToChunk( Player.position );
+
+		IniTerrain();
 	}
 
-	protected virtual void CreateTerrain()
+	protected virtual void IniTerrain()
 	{
-		CreateChunk( Vector2Int.zero );
+		CreateChunk( PlayerChunkPos );		
 
-		foreach ( Vector2Int pos in MathFunctions.NearlyPositions( Vector2Int.zero, (uint)ChunkRenderDistance ) )
+		foreach ( Vector2Int pos in MathFunctions.AroundPositions( Vector2Int.zero, (uint)ChunkRenderDistance ) )
 		{
-			CreateChunk( pos );
+			CreateChunk( pos + PlayerChunkPos );
 		}
 	}
 
@@ -62,6 +71,8 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 
 		Cell[,] cells = CreateCells( chunk.CellsOffset );
 		CreateMesh( chunk, cells );
+
+		LoadedChunks.Add( chunkPos, chunk );
 	}
 
 	protected virtual Cell[,] CreateCells( Vector2Int chunkOffset )
@@ -152,11 +163,84 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 
 	#endregion
 
+	#region Dynamic chunk loading
+
+	protected virtual void Update()
+	{
+		UpdateChunks();
+	}
+
+	protected virtual void UpdateChunks()
+	{
+		Vector2Int newPlayerChunkPos = RealPosToChunk( Player.position );
+		Vector2Int offset = newPlayerChunkPos - PlayerChunkPos;
+
+		// If chunk pos changed -> move the chunks of Chunks matrix and create the new visible chunks
+		if ( offset.magnitude > 0 )
+		{
+			PlayerChunkPos = newPlayerChunkPos;
+
+			List<Vector2Int> aroundChunksPos = MathFunctions.AroundPositions( newPlayerChunkPos, (uint)ChunkRenderDistance );
+			aroundChunksPos.Add( newPlayerChunkPos );
+			List<Vector2Int> chunksToUnload = new List<Vector2Int>();
+
+			LC_Chunk chunk;
+			Vector2Int chunkPos;
+			int index;
+			foreach ( KeyValuePair<Vector2Int, LC_Chunk> entry in LoadedChunks )
+			{
+				chunkPos = entry.Key;
+				chunk = entry.Value;
+				index = aroundChunksPos.IndexOf( chunkPos );
+				if ( index >= 0 )
+				{
+					aroundChunksPos.RemoveAt( index );
+				}
+				else
+				{
+					chunksToUnload.Add( chunkPos );
+					Destroy( chunk.Obj );
+				}
+			}
+
+			foreach ( Vector2Int pos in aroundChunksPos )
+			{
+				CreateChunk( pos );
+			}
+
+			foreach ( Vector2Int pos in chunksToUnload )
+			{
+				LoadedChunks.Remove( pos );
+			}			
+		}
+	}
+
+	#endregion
+
 	#region Auxiliar
 
 	public virtual Vector3 TerrainPosToReal( Vector3Int pos )
 	{
 		return transform.position + new Vector3( pos.x * CellSize.x, pos.y * CellSize.y, pos.z * CellSize.z );
+	}
+
+	public virtual Vector3Int RealPosToTerrain( Vector3 pos )
+	{
+		return new Vector3Int( (int)( pos.x / CellSize.x ), (int)( pos.y / CellSize.y ), (int)( pos.z / CellSize.z ) );
+	}
+
+	public virtual Vector2Int RealPosToChunk( Vector3 pos )
+	{
+		Vector3Int terrainPos = RealPosToTerrain( pos );
+
+		Vector2Int res = new Vector2Int( terrainPos.x / ChunkSize, terrainPos.z / ChunkSize );
+
+		if ( terrainPos.x < 0 )
+			res.x -= 1;
+		if ( terrainPos.z < 0 )
+			res.y -= 1;
+
+		return res;
 	}
 
 	protected virtual Cell GetChunkCell( Vector2Int pos, Cell[,] cells )
