@@ -523,28 +523,64 @@ public static class MathFunctions
 	/// <summary>
 	/// Generates a random float matrix using perlin noise.
 	/// </summary>
-	/// <param name="columns">Number of columns of the result matrix.</param>
-	/// <param name="rows">Number of rows of the result matrix.</param>
+	/// <param name="size">Size of the result matrix.</param>
 	/// <param name="seed">Seed of the result. Preferaby not integer.</param>
 	/// <param name="octaves"></param>	// TODO
 	/// <param name="persistance"></param> 	// TODO
 	/// <param name="lacunarity"></param> 	// TODO
-	/// <param name="minValue">Minimum value. Infinity not allowed.</param>
-	/// <param name="maxValue">Maximum value. Infinity not allowed.</param>
+	/// <param name="minAndMaxValues">Minimum (x) and maximum (y) output values. Infinity not allowed.</param>
+	/// <param name="xOffset">Rows offset for the random generation.</param>
+	/// <param name="yOffset">Columns offset for the random generation..</param>
 	/// <returns>A random float matrix with the columns and rows specified.</returns>
-	public static float[,] PerlinNoiseMap( int columns, int rows, float seed, float octaves, float persistance, float lacunarity, float minValue, float maxValue )
+	public static float[,] PerlinNoiseMap( Vector2Int size, int seed, int octaves, float persistance, float lacunarity, Vector2 minAndMaxValues,
+		float scaleDivisor = 1f, int xOffset = 0, int yOffset = 0, bool useGlobalNormalization = false )
 	{
-		float[,] map = new float[columns, rows];
+		float[,] map = new float[size.x, size.y];
+		float perlinValue = 0;
+		float amplitude = 1;
+		float frequency;
+		float sampleX;
+		float sampleY;
+
+		float halfX = size.x / 2f;
+		float halfY = size.y / 2f;
+		float minPerlinValue = float.MaxValue;
+		float maxPerlinValue = float.MinValue;
+
+		if ( scaleDivisor <= 0 )
+			scaleDivisor = 0.0001f;
+
+		
+
+		// Initialize octaves (and optionally min and max perlin values for normalization)
+		System.Random randGen = new System.Random( seed );
+		Vector2[] octavesOffsets = new Vector2[octaves];
+
+		if ( useGlobalNormalization )
+			maxPerlinValue = 0;
+
+		for ( int i = 0; i < octaves; i++ )
+		{
+			octavesOffsets[i] = new Vector2( randGen.Next( -100000, 100000 ) + xOffset,
+				randGen.Next( -100000, 100000 ) + yOffset );			
+
+			if ( useGlobalNormalization )
+			{
+				maxPerlinValue += amplitude;
+				amplitude *= persistance;
+			}
+		}
+
+		if ( useGlobalNormalization )
+		{
+			maxPerlinValue /= 1.75f; // Adapt maxPerlinValue to more probable values
+			minPerlinValue = -maxPerlinValue;			
+		}
 
 		// Initializate map
-		float currentMin = float.MaxValue;
-		float currentMax = float.MinValue;
-		float perlinValue = 0;
-		float amplitude;
-		float frequency;
-		for ( int col = 0; col < map.GetLength( 0 ); col++ )
+		for ( int x = 0; x < map.GetLength( 0 ); x++ )
 		{
-			for ( int row = 0; row < map.GetLength( 1 ); row++ )
+			for ( int y = 0; y < map.GetLength( 1 ); y++ )
 			{
 				perlinValue = 0;
 				amplitude = 1;
@@ -552,25 +588,30 @@ public static class MathFunctions
 
 				for ( int oct = 0; oct < octaves; oct++ )
 				{
-					perlinValue += Mathf.PerlinNoise( seed + col * frequency, seed + row * frequency ) * 2 - 1; // * 2 + 1 For positive and negative jumps
+					sampleX = ( x - halfX + octavesOffsets[oct].x ) / scaleDivisor * frequency;
+					sampleY = ( y - halfY + octavesOffsets[oct].y ) / scaleDivisor * frequency;
+					perlinValue += amplitude * (Mathf.PerlinNoise( sampleX, sampleY ) * 2 - 1); // * 2 - 1 to change range [0, 1] to [-1, 1]
 
 					amplitude *= persistance;
 					frequency *= lacunarity;
 				}
 
-				currentMin = Min( perlinValue, currentMin );
-				currentMax = Max( perlinValue, currentMax );
+				if ( !useGlobalNormalization )
+				{
+					minPerlinValue = Min( perlinValue, minPerlinValue );
+					maxPerlinValue = Max( perlinValue, maxPerlinValue );
+				}
 
-				map[col, row] = perlinValue;
+				map[x, y] = perlinValue;
 			}
 		}
 
 		// Normalize map values in min-max range
 		for ( int x = 0; x < map.GetLength( 0 ); x++ )
 		{
-			for ( int z = 0; z < map.GetLength( 1 ); z++ )
+			for ( int y = 0; y < map.GetLength( 1 ); y++ )
 			{
-				map[x, z] = minValue + Mathf.InverseLerp( currentMin, currentMax, map[x, z] ) * ( maxValue - minValue );
+				map[x, y] = minAndMaxValues.x + Mathf.InverseLerp( minPerlinValue, maxPerlinValue, map[x, y] ) * ( minAndMaxValues.y - minAndMaxValues.x );			
 			}
 		}
 
@@ -672,17 +713,17 @@ public static class MathFunctions
 	/// <typeparam name="T">Type of the elements of the generic matrix.</typeparam>
 	/// <param name="get">Getter of values of the original matrix.</param>
 	/// <param name="scaleUpFactor">Multiply factor of the original dimension.</param>
-	/// <param name="col">Column of the value to calculate.</param>
-	/// <param name="row">Row of the value to calculate.</param>
+	/// <param name="row">Column of the value to calculate.</param>
+	/// <param name="col">Row of the value to calculate.</param>
 	/// <param name="originalDim">Dimension ( columns and rows ) of the original matrix.</param>
 	/// <param name="multiplyFunc">Multiplication function for the interpolation. Must accept multiplication by values between 0 and 1 (both included).</param>
 	/// <param name="addFunc">Add function for the interpolation.</param>
 	/// <returns>The scaled up value.</returns>
-	public static T ScaleUpMatrixValue<T>( Func<int, int, T> get, int scaleUpFactor, int col, int row, Vector2Int originalDim, Func<T, float, T> multiplyFunc, Func<T, T, T> addFunc )
+	public static T ScaleUpMatrixValue<T>( Func<int, int, T> get, int scaleUpFactor, int row, int col, Vector2Int originalDim, Func<T, float, T> multiplyFunc, Func<T, T, T> addFunc )
 	{
-		float originalCol = Clamp( col / (float)scaleUpFactor, 0, originalDim.x - 1 );
-		float originalRow = Clamp( row / (float)scaleUpFactor, 0, originalDim.y - 1 );
-		return InterpolateValueInMatrix( get, originalCol, originalRow, multiplyFunc, addFunc );
+		float originalRow = Clamp( row / (float)scaleUpFactor, 0, originalDim.x - 1 );
+		float originalCol = Clamp( col / (float)scaleUpFactor, 0, originalDim.y - 1 );
+		return InterpolateValueInMatrix( get, originalRow, originalCol, multiplyFunc, addFunc );
 	}
 
 	/// <summary>
@@ -690,28 +731,28 @@ public static class MathFunctions
 	/// </summary>
 	/// <typeparam name="T">Type of the elements of the matrix.</typeparam>
 	/// <param name="get">Getter of values of the matrix.</param>
-	/// <param name="col">Decimal column of the value to interpolate.</param>
-	/// <param name="row">Decimal row of the value to interpolate.</param>
+	/// <param name="row">Decimal column of the value to interpolate.</param>
+	/// <param name="col">Decimal row of the value to interpolate.</param>
 	/// <param name="multiplyFunc">Multiplication function for the interpolation. Must accept multiplication by values between 0 and 1 (both included).</param>
 	/// <param name="addFunc">Add function for the interpolation.</param>
 	/// <returns>The interpolated value.</returns>
-	public static T InterpolateValueInMatrix<T>( Func<int, int, T> get, float col, float row, Func<T, float, T> multiplyFunc, Func<T, T, T> addFunc )
+	public static T InterpolateValueInMatrix<T>( Func<int, int, T> get, float row, float col, Func<T, float, T> multiplyFunc, Func<T, T, T> addFunc )
 	{
 		T result;
-
-		int matrixIntCol = (int)col;
-		float matrixDecimalCol = col - matrixIntCol;
 
 		int matrixIntRow = (int)row;
 		float matrixDecimalRow = row - matrixIntRow;
 
-		result = multiplyFunc( multiplyFunc( get( matrixIntCol, matrixIntRow ), 1f - matrixDecimalCol ), 1f - matrixDecimalRow );
-		if ( matrixDecimalCol > 0 )
-			result = addFunc( result, multiplyFunc( multiplyFunc( get( matrixIntCol + 1, matrixIntRow ), matrixDecimalCol ), 1f - matrixDecimalRow ) );
+		int matrixIntCol = (int)col;
+		float matrixDecimalCol = col - matrixIntCol;
+
+		result = multiplyFunc( multiplyFunc( get( matrixIntRow, matrixIntCol ), 1f - matrixDecimalRow ), 1f - matrixDecimalCol );
 		if ( matrixDecimalRow > 0 )
-			result = addFunc( result, multiplyFunc( multiplyFunc( get( matrixIntCol, matrixIntRow + 1 ), 1f - matrixDecimalCol ), matrixDecimalRow ) );
-		if ( matrixDecimalCol > 0 && matrixDecimalRow > 0 )
-			result = addFunc( result, multiplyFunc( multiplyFunc( get( matrixIntCol + 1, matrixIntRow + 1 ), matrixDecimalCol ), matrixDecimalRow ) );
+			result = addFunc( result, multiplyFunc( multiplyFunc( get( matrixIntRow + 1, matrixIntCol ), matrixDecimalRow ), 1f - matrixDecimalCol ) );
+		if ( matrixDecimalCol > 0 )
+			result = addFunc( result, multiplyFunc( multiplyFunc( get( matrixIntRow, matrixIntCol + 1 ), 1f - matrixDecimalRow ), matrixDecimalCol ) );
+		if ( matrixDecimalRow > 0 && matrixDecimalCol > 0 )
+			result = addFunc( result, multiplyFunc( multiplyFunc( get( matrixIntRow + 1, matrixIntCol + 1 ), matrixDecimalRow ), matrixDecimalCol ) );
 
 		return result;
 	}

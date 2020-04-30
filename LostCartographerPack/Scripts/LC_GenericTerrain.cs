@@ -69,27 +69,27 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 		chunk.Obj.name = "Chunk_" + chunkPos;
 		chunk.Obj.transform.position = TerrainPosToReal( new Vector3Int( chunk.CellsOffset.x, 0, chunk.CellsOffset.y ) );
 
-		Cell[,] cells = CreateCells( chunk.CellsOffset );
+		Cell[,] cells = CreateCells( chunk );
 		CreateMesh( chunk, cells );
 
 		LoadedChunks.Add( chunkPos, chunk );
 	}
 
-	protected virtual Cell[,] CreateCells( Vector2Int chunkOffset )
+	protected virtual Cell[,] CreateCells( LC_Chunk chunk )
 	{
 		Cell[,] cells = new Cell[ChunkSize, ChunkSize];
 		for ( int x = 0; x < ChunkSize; x++ )
 		{
 			for ( int z = 0; z < ChunkSize; z++ )
 			{
-				cells[x, z] = CreateCell( x + chunkOffset.x, z + chunkOffset.y );
+				cells[x, z] = CreateChunkCell( x, z, chunk );
 			}
 		}
 
 		return cells;
 	}
 
-	public abstract Cell CreateCell( int x, int z );
+	public abstract Cell CreateChunkCell( int chunkX, int chunkZ, LC_Chunk chunk );
 
 	protected virtual void CreateMesh( LC_Chunk chunk, Cell[,] cells )
 	{
@@ -129,7 +129,7 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 		}
 	}
 
-	protected abstract void CreateCellMesh( int x, int z, LC_Chunk chunk, Cell[,] cells );
+	protected abstract void CreateCellMesh( int chunkX, int chunkZ, LC_Chunk chunk, Cell[,] cells );
 
 	protected virtual void CreateMeshObj( GameObject chunkObj )
 	{
@@ -175,7 +175,7 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 		Vector2Int newPlayerChunkPos = RealPosToChunk( Player.position );
 		Vector2Int offset = newPlayerChunkPos - PlayerChunkPos;
 
-		// If chunk pos changed -> move the chunks of Chunks matrix and create the new visible chunks
+		// If chunk pos changed
 		if ( offset.magnitude > 0 )
 		{
 			PlayerChunkPos = newPlayerChunkPos;

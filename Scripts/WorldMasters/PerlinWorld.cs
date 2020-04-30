@@ -8,7 +8,7 @@ public class PerlinWorld : WorldMaster
 
 	[Header( "Perlin world settings" )]
 	[SerializeField] protected bool RandomMapSeed = true;
-	[SerializeField] protected float MapSeed;
+	[SerializeField] protected int MapSeed;
 	[SerializeField] [Range( 1, 10 )] protected int MapLevel = 2;
 	[SerializeField] protected int WaterLevel = 0;
 	[SerializeField] [Range( 0, 100 )] protected float ObjectProbability = 0.5f;
@@ -34,12 +34,13 @@ public class PerlinWorld : WorldMaster
 
 	protected override void CreateMap()
 	{
-		if ( RandomMapSeed ) MapSeed = (float)RandomGenerator.NextDouble() * 100f;
+		if ( RandomMapSeed ) MapSeed = RandomGenerator.Next();
 		int mapSize = (int)Mathf.Pow( 2f, MapLevel );
 		Xsize = mapSize;
 		Zsize = mapSize;
 
-		HeightsMap = MathFunctions.PerlinNoiseMap( Xsize / MapDivisor, Zsize / MapDivisor, MapSeed, Octaves, Persistance, Lacunarity, MinAndMaxHeights.x, MinAndMaxHeights.y );
+		Vector2Int size = new Vector2Int( Xsize / MapDivisor, Zsize / MapDivisor );
+		HeightsMap = MathFunctions.PerlinNoiseMap( size, MapSeed, Octaves, Persistance, Lacunarity, MinAndMaxHeights );
 	}
 
 	protected override WorldCell CreateWorldCell( int x, int z )

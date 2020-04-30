@@ -7,11 +7,10 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 	#region Settings	
 
 	[Header( "Random generation settings" )]
-	[SerializeField] [Range( 1, 8 )] protected int TerrainSizeLevel = 4;
-	[SerializeField] [Range( 1, 128 )] protected int MapDivisor = 1;
+	[SerializeField] [Range( 1, 128 )] protected int HeightsMapDivisor = 1;
 	[SerializeField] protected Vector2Int MinAndMaxHeights = new Vector2Int( 0, 1 );
 	[SerializeField] protected bool RandomMapSeed = true;
-	[SerializeField] protected float MapSeed;
+	[SerializeField] protected int MapSeed;
 	[SerializeField] protected int Octaves = 4;
 	[SerializeField] protected float Persistance = 0.5f;
 	[SerializeField] protected float Lacunarity = 0.2f;
@@ -26,7 +25,6 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 
 	#region Function attributes
 
-	protected int TerrainSize;
 	protected System.Random RandomGenerator;
 	protected float[,] HeightsMap;
 
@@ -44,54 +42,51 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 		TextureSize = new Vector2( 1f / TextureColumnsAndRows.x, 1f / TextureColumnsAndRows.y );
 		TextureMargin = TextureSize / TextureMarginRelation;
 
-		TerrainSize = (int)Mathf.Pow( 2, TerrainSizeLevel );
 		RandomGenerator = new System.Random();
-		CreateMap();
+		if ( RandomMapSeed ) MapSeed = RandomGenerator.Next();
 
 		base.Start();
 	}
 
-	protected virtual void CreateMap()
+	protected override void CreateChunk( Vector2Int chunkPos )
 	{
-		if ( RandomMapSeed ) MapSeed = (float)RandomGenerator.NextDouble() * 100f;
-
-		HeightsMap = MathFunctions.PerlinNoiseMap(
-			TerrainSize / MapDivisor,
-			TerrainSize / MapDivisor,
-			MapSeed,
-			Octaves, Persistance, Lacunarity,
-			MinAndMaxHeights.x, MinAndMaxHeights.y );
+		CreateChunkHeightsMap( chunkPos );
+		base.CreateChunk( chunkPos );
 	}
 
-	public override LC_Cell CreateCell( int x, int z )
+	protected virtual void CreateChunkHeightsMap( Vector2Int chunkPos )
 	{
-		int height = Mathf.RoundToInt(
-				MathFunctions.ScaleUpMatrixValue(
-					( a, b ) => HeightsMap[a, b],
-					MapDivisor,
-					( x < 0 ? -x : x ) % TerrainSize,
-					( z < 0 ? -z : z ) % TerrainSize,
-					new Vector2Int( HeightsMap.GetLength( 0 ), HeightsMap.GetLength( 1 ) ),
-					( a, b ) => a * b,
-					( a, b ) => a + b ) );
+		HeightsMap = MathFunctions.PerlinNoiseMap(
+			new Vector2Int( ChunkSize, ChunkSize ),
+			MapSeed,
+			Octaves, Persistance, Lacunarity,
+			MinAndMaxHeights,
+			HeightsMapDivisor,
+			chunkPos.x * ChunkSize,
+			chunkPos.y * ChunkSize,
+			true);
+	}
 
-		return new LC_Cell( new Vector3Int( x, height, z ) );
+	public override LC_Cell CreateChunkCell( int chunkX, int chunkZ, LC_Chunk chunk )
+	{
+		int height = Mathf.RoundToInt( HeightsMap[chunkX, chunkZ] );
+		return new LC_Cell( new Vector3Int( chunk.CellsOffset.x + chunkX, height, chunk.CellsOffset.y + chunkZ ) );
 	}
 
 	#endregion
 
 	#region Render
 
-	protected override void CreateCellMesh( int x, int z, LC_Chunk chunk, LC_Cell[,] cells )
-	{		
-		LC_Cell cell = cells[x, z];
+	protected override void CreateCellMesh( int chunkX, int chunkZ, LC_Chunk chunk, LC_Cell[,] cells )
+	{
+		LC_Cell cell = cells[chunkX, chunkZ];
 		Vector3 realPos = TerrainPosToReal( cell.TerrainPos );
 
 		// Vertices
 		vertices.Add( realPos );
 
 		// Triangles
-		if ( x < ChunkSize - 1 && z < ChunkSize - 1 )
+		if ( chunkX < ChunkSize - 1 && chunkZ < ChunkSize - 1 )
 		{
 			int vertexI = vertices.Count - 1;
 
@@ -105,13 +100,13 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 		}
 
 		// UVs
-		GetUVs( new Vector2Int(x,z), out Vector2 iniUV, out Vector2 endUV, chunk, cells );
+		GetUVs( new Vector2Int( chunkX, chunkZ ), out Vector2 iniUV, out Vector2 endUV, chunk, cells );
 		uvs.Add( iniUV );
 	}
 
-	public void GetUVs( Vector2Int pos, out Vector2 ini, out Vector2 end, LC_Chunk chunk, LC_Cell[,] cells )
+	public void GetUVs( Vector2Int chunkPos, out Vector2 ini, out Vector2 end, LC_Chunk chunk, LC_Cell[,] cells )
 	{
-		Vector2Int texPos = GetTexPos( cells[pos.x, pos.y], chunk, cells );
+		Vector2Int texPos = GetTexPos( cells[chunkPos.x, chunkPos.y], chunk, cells );
 
 		end = new Vector2( ( texPos.x + 1f ) / TextureColumnsAndRows.x, ( texPos.y + 1f ) / TextureColumnsAndRows.y ) - TextureMargin;
 		ini = end - TextureMargin;
