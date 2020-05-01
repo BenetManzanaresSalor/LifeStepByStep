@@ -24,15 +24,18 @@ public class LC_CubeTerrain : LC_Terrain
 		}
 		else
 		{
-			foreach ( LC_Cell cell in cells )
+			for ( int x = 0; x < ChunkSize; x++ )
 			{
-				Vector2Int cellPosInChunk = chunk.CellPosToChunk( cell.TerrainPos );
-				CreateElementMesh( cellPosInChunk, cellPosInChunk, chunk, cells );
-
-				// Create mesh before get the maximum mesh vertices at next cell render
-				if ( vertices.Count + MaxVerticesPerRenderElem >= MaxVerticesByMesh )
+				for ( int z = 0; z < ChunkSize; z++ )
 				{
-					CreateMeshObj( chunk.Obj );
+					Vector2Int cellPosInChunk = chunk.CellPosToChunk( cells[x, z].TerrainPos );
+					CreateElementMesh( cellPosInChunk, cellPosInChunk, chunk, cells );
+
+					// Create mesh before get the maximum mesh vertices at next cell render
+					if ( vertices.Count + MaxVerticesPerRenderElem >= MaxVerticesByMesh )
+					{
+						CreateMeshObj( chunk.Obj );
+					}
 				}
 			}
 		}
@@ -106,7 +109,7 @@ public class LC_CubeTerrain : LC_Terrain
 			}
 		}
 	}
-		
+
 	protected virtual void CreateEdgeMesh( Vector3 cellRealPos, LC_Cell edgeCell, bool toRight, Vector2 iniUV, Vector2 endUV, LC_Chunk chunk, LC_Cell[,] cells )
 	{
 		Vector2 edgeIniUV;
@@ -169,6 +172,6 @@ public class LC_CubeTerrain : LC_Terrain
 			uvs.Add( new Vector2( edgeIniUV.x, edgeIniUV.y ) );
 		}
 	}
-		
+
 	#endregion
 }

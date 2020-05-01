@@ -2,12 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum LC_RenderType : int
-{
-	HEIGHT,
-	SMOOTHING
-}
-
 public struct LC_Chunk
 {
 	public GameObject Obj;

@@ -11,13 +11,11 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 	[SerializeField] protected Vector2Int MinAndMaxHeights = new Vector2Int( 0, 1 );
 	[SerializeField] protected bool RandomMapSeed = true;
 	[SerializeField] protected int MapSeed;
-	[SerializeField] protected int Octaves = 4;
-	[SerializeField] protected float Persistance = 0.5f;
-	[SerializeField] protected float Lacunarity = 0.2f;
+	[SerializeField] [Range( 0, 64 )] protected int Octaves = 4;
+	[SerializeField] [Range( 0, 1 )] protected float Persistance = 0.5f;
+	[SerializeField] [Range( 0, 1 )] protected float Lacunarity = 0.2f;
 
 	[Header( "Additional render settings" )]
-	[SerializeField] protected LC_RenderType RendererType = LC_RenderType.HEIGHT;
-	[SerializeField] [Range( 1, 10 )] protected int SmoothingSize = 2;
 	[SerializeField] protected Vector2Int TextureColumnsAndRows = Vector2Int.one;
 	[SerializeField] [Range( 1, 4 )] protected float TextureMarginRelation = 3;
 
@@ -57,14 +55,14 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 	protected virtual void CreateChunkHeightsMap( Vector2Int chunkPos )
 	{
 		HeightsMap = MathFunctions.PerlinNoiseMap(
-			new Vector2Int( ChunkSize, ChunkSize ),
+			new Vector2Int( ChunkSize + 1, ChunkSize + 1 ), // +1 for edges
 			MapSeed,
 			Octaves, Persistance, Lacunarity,
 			MinAndMaxHeights,
 			HeightsMapDivisor,
 			chunkPos.x * ChunkSize,
 			chunkPos.y * ChunkSize,
-			true);
+			true );
 	}
 
 	public override LC_Cell CreateChunkCell( int chunkX, int chunkZ, LC_Chunk chunk )
@@ -86,17 +84,17 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 		vertices.Add( realPos );
 
 		// Triangles
-		if ( chunkX < ChunkSize - 1 && chunkZ < ChunkSize - 1 )
+		if ( chunkX < cells.GetLength( 0 ) - 1 && chunkZ < cells.GetLength( 1 ) - 1 )
 		{
 			int vertexI = vertices.Count - 1;
 
 			triangles.Add( vertexI );
 			triangles.Add( vertexI + 1 );
-			triangles.Add( vertexI + ChunkSize + 1 );
+			triangles.Add( vertexI + cells.GetLength( 0 ) + 1 );
 
 			triangles.Add( vertexI );
-			triangles.Add( vertexI + ChunkSize + 1 );
-			triangles.Add( vertexI + ChunkSize );
+			triangles.Add( vertexI + cells.GetLength( 0 ) + 1 );
+			triangles.Add( vertexI + cells.GetLength( 0 ) );
 		}
 
 		// UVs
@@ -114,50 +112,10 @@ public class LC_Terrain : LC_GenericTerrain<LC_Cell>
 
 	protected virtual Vector2Int GetTexPos( LC_Cell cell, LC_Chunk chunk, LC_Cell[,] cells )
 	{
-		float value;
-
-		switch ( RendererType )
-		{
-			case LC_RenderType.SMOOTHING:
-				value = GetSmoothingRenderValue( cell, chunk, cells );
-				break;
-			case LC_RenderType.HEIGHT:
-				value = GetHeightRenderValue( cell );
-				break;
-			default:
-				value = 0;
-				break;
-		}
-
+		float value = Mathf.InverseLerp( MinAndMaxHeights.x, MinAndMaxHeights.y, cell.TerrainPos.y );
 		int y = (int)Mathf.Clamp( TextureColumnsAndRows.y * value, 0, TextureColumnsAndRows.y - 1 );
 
 		return new Vector2Int( 0, y );
-	}
-
-	protected virtual float GetHeightRenderValue( LC_Cell cell )
-	{
-		return Mathf.InverseLerp( MinAndMaxHeights.x, MinAndMaxHeights.y, cell.TerrainPos.y );
-	}
-
-	protected virtual float GetSmoothingRenderValue( LC_Cell cell, LC_Chunk chunk, LC_Cell[,] cells )
-	{
-		float value = GetHeightRenderValue( cell );
-		Vector2Int cellChunkPos = chunk.CellPosToChunk( cell.TerrainPos );
-
-		int numCells = 1;
-		LC_Cell otherCell;
-		foreach ( Vector2Int pos in MathFunctions.AroundPositions( cellChunkPos, (uint)SmoothingSize ) )
-		{
-			otherCell = GetChunkCell( pos, cells );
-
-			if ( otherCell != null )
-			{
-				value += GetHeightRenderValue( otherCell );
-				numCells++;
-			}
-		}
-
-		return value / numCells;
 	}
 
 	#endregion

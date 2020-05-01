@@ -161,8 +161,6 @@ MonoBehaviour:
   Octaves: 4
   Persistance: 0.5
   Lacunarity: 0.2
-  RendererType: 0
-  SmoothingSize: 2
   TextureColumnsAndRows: {x: 2, y: 3}
   TextureMarginRelation: 3
   UseSplitAndMerge: 1
@@ -225,18 +223,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CellSize: {x: 2, y: 1, z: 2}
   ChunkSizeLevel: 4
-  ChunkRenderDistance: 2
+  ChunkRenderDistance: 4
   Player: {fileID: 1819329498}
   RenderMaterial: {fileID: 2100000, guid: 3d0ecbbb22b864646875e34c59e6541b, type: 2}
-  HeightsMapDivisor: 20
-  MinAndMaxHeights: {x: 0, y: 10}
+  HeightsMapDivisor: 50
+  MinAndMaxHeights: {x: 0, y: 50}
   RandomMapSeed: 1
-  MapSeed: 0
+  MapSeed: 3
   Octaves: 4
   Persistance: 0.5
   Lacunarity: 0.2
-  RendererType: 0
-  SmoothingSize: 2
   TextureColumnsAndRows: {x: 2, y: 3}
   TextureMarginRelation: 3
 --- !u!1001 &1815823585
@@ -310,6 +306,16 @@ PrefabInstance:
         type: 3}
       propertyPath: FreeVerticalMovement
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2248012419888202957, guid: 34a88c5a1209729478a3f9ed8951fc6a,
+        type: 3}
+      propertyPath: XandZvelocity
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 2248012419888202957, guid: 34a88c5a1209729478a3f9ed8951fc6a,
+        type: 3}
+      propertyPath: Yvelocity
+      value: 50
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 2248012421118770675, guid: 34a88c5a1209729478a3f9ed8951fc6a, type: 3}

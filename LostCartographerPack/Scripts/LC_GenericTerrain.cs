@@ -16,10 +16,9 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 	[Header( "Global settings" )]
 	[SerializeField] protected Vector3 CellSize = Vector3.one;
 	[SerializeField] [Range( 1, 8 )] protected int ChunkSizeLevel = 4;
-	[SerializeField] [Range( 0, 128 )] protected int ChunkRenderDistance = 4;
+	[SerializeField] [Range( 0, 64 )] protected int ChunkRenderDistance = 4;
 	[SerializeField] protected Transform Player;
 	[SerializeField] protected Material RenderMaterial;
-
 
 	#endregion
 
@@ -54,7 +53,7 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 
 	protected virtual void IniTerrain()
 	{
-		CreateChunk( PlayerChunkPos );		
+		CreateChunk( PlayerChunkPos );
 
 		foreach ( Vector2Int pos in MathFunctions.AroundPositions( Vector2Int.zero, (uint)ChunkRenderDistance ) )
 		{
@@ -77,10 +76,10 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 
 	protected virtual Cell[,] CreateCells( LC_Chunk chunk )
 	{
-		Cell[,] cells = new Cell[ChunkSize, ChunkSize];
-		for ( int x = 0; x < ChunkSize; x++ )
+		Cell[,] cells = new Cell[ChunkSize + 1, ChunkSize + 1];	// +1 for edges
+		for ( int x = 0; x < cells.GetLength( 0 ); x++ )
 		{
-			for ( int z = 0; z < ChunkSize; z++ )
+			for ( int z = 0; z < cells.GetLength( 1 ); z++ )
 			{
 				cells[x, z] = CreateChunkCell( x, z, chunk );
 			}
@@ -211,7 +210,7 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 			foreach ( Vector2Int pos in chunksToUnload )
 			{
 				LoadedChunks.Remove( pos );
-			}			
+			}
 		}
 	}
 
@@ -241,12 +240,6 @@ public abstract class LC_GenericTerrain<Cell> : MonoBehaviour where Cell : LC_Ce
 			res.y -= 1;
 
 		return res;
-	}
-
-	protected virtual Cell GetChunkCell( Vector2Int pos, Cell[,] cells )
-	{
-		bool isIn = pos.x >= 0 && pos.x < ChunkSize && pos.y >= 0 && pos.y < ChunkSize;
-		return isIn ? cells[pos.x, pos.y] : null;
 	}
 
 	#endregion
