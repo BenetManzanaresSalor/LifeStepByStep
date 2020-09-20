@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6094329596018464403
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6094329596018464407}
+  - component: {fileID: 6094329596018464401}
+  - component: {fileID: 6094329596018464402}
+  m_Layer: 0
+  m_Name: RandomWorld
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6094329596018464407
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6094329596018464403}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6094329596018464401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6094329596018464403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12c370bbca7a4aa4ba6751ee0c44cf5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  WorldObjects:
+  - {fileID: 5428606464154138628, guid: 57f4a5c313301aa40b1fa56af54e78c2, type: 3}
+  - {fileID: 7744751330611647402, guid: ad7b456410e9f1c4194ed61395cf5853, type: 3}
+  - {fileID: 8095195492649409632, guid: 2611a32111a5cfe4181f0535578eb70d, type: 3}
+  UseRandomSeed: 1
+  Seed: 0
+  ObjectProbability: 2
+--- !u!114 &6094329596018464402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6094329596018464403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5d7bb174a6ea5a48ae1794879d57959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Player: {fileID: 0}
+  CellSize: {x: 2, y: 1, z: 2}
+  ChunkSizeLevel: 4
+  ChunkRenderDistance: 2
+  HasCollider: 0
+  DynamicChunkLoading: 0
+  ParallelChunkLoading: 1
+  RenderMaterial: {fileID: 2100000, guid: 3d0ecbbb22b864646875e34c59e6541b, type: 2}
+  MaxUpdateTime: 0.008333334
+  HeightsDivisor: 75
+  MaxHeight: 50
+  UseRandomSeed: 1
+  Seed: 0
+  Octaves: 4
+  Persistance: 0.25
+  Lacunarity: 2.5
+  RenderType: 2
+  TextureColumnsAndRows: {x: 1, y: 3}
+  TextureMarginRelation: 8
+  HeightShaderColors:
+  - {r: 0.9176471, g: 0.8862746, b: 0.80392164, a: 1}
+  - {r: 0.5568628, g: 0.5803922, b: 0.2901961, a: 1}
+  - {r: 0.3019608, g: 0.34901962, b: 0.16470589, a: 1}
+  UseSplitAndMerge: 1

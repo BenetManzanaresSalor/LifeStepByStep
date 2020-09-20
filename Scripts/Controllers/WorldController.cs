@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+
 public class WorldController : MonoBehaviour
 {
 	#region Attributes
@@ -10,7 +11,7 @@ public class WorldController : MonoBehaviour
 
 	#endregion
 
-	public WorldMaster CurrentWorld { get; protected set; }
+	public GenericWorld CurrentWorld { get; protected set; }
 	public FirstPersonController Player { get; protected set; }
 	public UIController UI { get; protected set; }
 
@@ -20,22 +21,11 @@ public class WorldController : MonoBehaviour
 
 	protected void Start()
 	{
-		CurrentWorld = FindObjectOfType<WorldMaster>();
+		CurrentWorld = FindObjectOfType<GenericWorld>();
 		Player = FindObjectOfType<FirstPersonController>();
 		UI = FindObjectOfType<UIController>();
 
 		ResetWorld();
-	}
-
-	protected void ResetWorld()
-	{
-		CurrentWorld.ResetWorld();
-		IniPlayerPos();
-	}
-
-	protected void IniPlayerPos()
-	{
-		Player.transform.position = CurrentWorld.GetIniCellPos() + PlayerOffset;
 	}
 
 	#endregion
@@ -44,10 +34,30 @@ public class WorldController : MonoBehaviour
 
 	protected void Update()
 	{
-		if ( Input.GetKeyDown( KeyCode.E ) ) CurrentWorld.SetAutomaticSteps();
-		if ( Input.GetKeyDown( KeyCode.R ) ) ResetWorld();		
-		if ( Input.GetKeyDown( KeyCode.F1 ) ) UI.SetStatus( CurrentWorld.GetStatus() );
-		if ( Input.GetKeyDown( KeyCode.F2 ) ) CurrentWorld.ResetStatistics();
+		if ( Input.GetKeyDown( KeyCode.E ) ) ToggleAutomaticSteping();
+		if ( Input.GetKeyDown( KeyCode.R ) ) ResetWorld();
+		/*if ( Input.GetKeyDown( KeyCode.F1 ) ) UI.SetStatus( CurrentWorld.GetStatus() );
+		if ( Input.GetKeyDown( KeyCode.F2 ) ) CurrentWorld.ResetStatistics();*/
+	}
+
+	#endregion
+
+	#region Controls
+
+	protected void ToggleAutomaticSteping()
+	{
+		CurrentWorld.ToggleAutomaticSteping();
+	}
+
+	protected void ResetWorld()
+	{
+		CurrentWorld.Generate();
+		IniPlayerPos();
+	}
+
+	protected void IniPlayerPos()
+	{
+		Player.transform.position = CurrentWorld.GetNearestTerrainRealPos( Player.transform.position ) + PlayerOffset;
 	}
 
 	#endregion
