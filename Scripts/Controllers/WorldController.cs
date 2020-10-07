@@ -12,7 +12,7 @@ public class WorldController : MonoBehaviour
 	#endregion
 
 	public GenericWorld CurrentWorld { get; protected set; }
-	public FirstPersonController Player { get; protected set; }
+	public LC_FirstPersonController Player { get; protected set; }
 	public UIController UI { get; protected set; }
 
 	#endregion
@@ -22,10 +22,10 @@ public class WorldController : MonoBehaviour
 	protected void Start()
 	{
 		CurrentWorld = FindObjectOfType<GenericWorld>();
-		Player = FindObjectOfType<FirstPersonController>();
+		Player = FindObjectOfType<LC_FirstPersonController>();
 		UI = FindObjectOfType<UIController>();
 
-		ResetWorld();
+		RestartWorld();
 	}
 
 	#endregion
@@ -34,30 +34,55 @@ public class WorldController : MonoBehaviour
 
 	protected void Update()
 	{
-		if ( Input.GetKeyDown( KeyCode.E ) ) ToggleAutomaticSteping();
-		if ( Input.GetKeyDown( KeyCode.R ) ) ResetWorld();
-		/*if ( Input.GetKeyDown( KeyCode.F1 ) ) UI.SetStatus( CurrentWorld.GetStatus() );
-		if ( Input.GetKeyDown( KeyCode.F2 ) ) CurrentWorld.ResetStatistics();*/
+		if ( Input.GetKeyDown( KeyCode.E ) )
+			ToggleAutomaticSteping();
+		if ( Input.GetKeyDown( KeyCode.R ) )
+			RestartWorld();
+		//if ( Input.GetKeyDown( KeyCode.F1 ) ) UI.SetStatus( CurrentWorld.GetStatus() );
+		//if ( Input.GetKeyDown( KeyCode.F2 ) ) CurrentWorld.ResetStatistics();
 	}
 
 	#endregion
 
 	#region Controls
 
-	protected void ToggleAutomaticSteping()
+	public void ToggleAutomaticSteping()
 	{
 		CurrentWorld.ToggleAutomaticSteping();
+		UI.SetAutomaticSteping( CurrentWorld.AutomaticSteping );
 	}
 
-	protected void ResetWorld()
+	public void RestartWorld()
 	{
+		if ( CurrentWorld.AutomaticSteping )
+			ToggleAutomaticSteping();
+
+		SetPlayerPos( CurrentWorld.transform.position );
 		CurrentWorld.Generate();
 		IniPlayerPos();
 	}
 
+	protected void SetPlayerPos( Vector3 pos )
+	{
+		bool initiallyEnabled = Player.enabled;
+		if ( initiallyEnabled )
+			Player.enabled = false;
+
+		Player.transform.position = pos;
+
+		if ( initiallyEnabled )
+			Player.enabled = true;
+	}
+
 	protected void IniPlayerPos()
 	{
-		Player.transform.position = CurrentWorld.GetNearestTerrainRealPos( Player.transform.position ) + PlayerOffset;
+		SetPlayerPos( CurrentWorld.GetNearestTerrainRealPos( Player.transform.position ) + PlayerOffset );
+	}
+
+	public void ExitGame()
+	{
+		Debug.Log( "EXIT" );
+		Application.Quit();
 	}
 
 	#endregion

@@ -94,17 +94,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c43b6301b6f9eb24e96c41baec8998d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  AutoInitialize: 1
+  MoveEnabled: 1
+  RotateEnabled: 1
   MouseSensitivity: 100
-  XandZvelocity: 15
+  HoritzontalVelocity: 50
+  FreeVerticalMovement: 1
+  FreeVerticalVelocity: 50
   JumpHeight: 3
-  Gravity: -9.807
-  GroundCheck: {fileID: 3543242142416358627}
-  GroundCheckRadius: 1
+  UseMoreRealisticJump: 1
+  MoreRealisticJumpVelocityDivisor: 2
+  SphericGroundCheck: {fileID: 3543242142416358627}
   WhatIsGround:
     serializedVersion: 2
-    m_Bits: 0
-  FreeVerticalMovement: 1
-  Yvelocity: 15
+    m_Bits: 1
+  VerticalRotationRange: 180
 --- !u!1 &3543242143765965901
 GameObject:
   m_ObjectHideFlags: 0

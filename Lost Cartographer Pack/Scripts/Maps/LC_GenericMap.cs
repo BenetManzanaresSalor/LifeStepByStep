@@ -106,6 +106,16 @@ public abstract class LC_GenericMap<Terrain, Chunk, Cell> : MonoBehaviour where 
 	}
 
 	/// <summary>
+	/// Checks if a new iteration of a loop will be in the MaxUpdateTime using the average iteration time.
+	/// </summary>
+	/// <param name="averageIterationTime">Average time of the loop iteration.</param>
+	/// <returns></returns>
+	protected virtual bool InMaxUpdateTime( float averageIterationTime )
+	{
+		return ( Time.realtimeSinceStartup - UpdateIniTime + averageIterationTime ) <= MaxUpdateTime;
+	}
+
+	/// <summary>
 	/// <para>Compute the pixels of the map using the terrain cells, continuing from the last cell pixels updated.</para>
 	/// <para>For each cell pixels to update it uses the InMaxUpdateTime method, breaking the loop if the MaxUpdateTime is exceeded.</para>
 	/// </summary>
@@ -121,9 +131,12 @@ public abstract class LC_GenericMap<Terrain, Chunk, Cell> : MonoBehaviour where 
 		Cell cell;
 		Color color;
 		int row, column;
-		for ( int x = 0; x < cellsToGet.x && InMaxUpdateTime(); x++ )
+		float loopStartTime = Time.realtimeSinceStartup;
+		float numIterations = 0;
+		float averageIterationTime = 0;
+		for ( int x = 0; x < cellsToGet.x && InMaxUpdateTime( averageIterationTime * cellsToGet.x ); x++ )
 		{
-			for ( int y = 0; y < cellsToGet.y && InMaxUpdateTime(); y++ )
+			for ( int y = 0; y < cellsToGet.y && InMaxUpdateTime( averageIterationTime ); y++ )
 			{
 				cellPosInTexture.x = ( CurrentCellPosInTex.x + x ) % cellsToGet.x;
 				cellPosInTexture.y = ( CurrentCellPosInTex.y + y ) % cellsToGet.y;
@@ -140,6 +153,9 @@ public abstract class LC_GenericMap<Terrain, Chunk, Cell> : MonoBehaviour where 
 						TextureColors[row * MapTexture.height + column] = color;
 					}
 				}
+
+				numIterations++;
+				averageIterationTime = ( Time.realtimeSinceStartup - loopStartTime ) / numIterations;
 			}
 		}
 

@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public delegate bool Predicate();
-
 public struct EntityAction
 {
-	public Predicate Conditions;
+	public Func<bool> Conditions;
 	public Func<float> Method;
 
-	public EntityAction( Predicate conditions, Func<float> method )
+	public EntityAction( Func<bool> conditions, Func<float> method )
 	{
 		Conditions = conditions;
 		Method = method;
@@ -24,6 +22,7 @@ public abstract class Entity : WorldObject
 	protected const float MaxEnergyValue = 100;
 	protected const float MinEnergyValue = 0;
 	protected const float NullEnergyCost = 0;
+	protected const float NotActionCost = NullEnergyCost - 1;
 
 	#endregion
 
@@ -32,20 +31,26 @@ public abstract class Entity : WorldObject
 	#region Settings
 
 	[Header( "Entity settings" )]
-	[SerializeField] [Min( NullEnergyCost )] protected float MoveCost;
-	[SerializeField] [Min( NullEnergyCost )] protected float MoveToTargetCost;
-	[SerializeField] [Min( NullEnergyCost )] protected float RandomMoveCost;
-	[SerializeField] protected uint SearchRadius = 1;
+	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float Move1msCost = 1;
+	[SerializeField] protected Vector2 MinAndMaxMoveSeconds = new Vector2( 0.75f, 1.25f );
+	[SerializeField] protected float FastMoveDivisor = 1.5f;
+	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float SearchCost = NotActionCost;
+	[SerializeField] protected uint SearchRadius = 5;
+	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float PathToTargetCost = NullEnergyCost;
+	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float RandomMoveCost = NullEnergyCost;
 	[SerializeField] [Range( 0, 100 )] protected int ConserveDirectionProbability = 50;
-	[SerializeField] protected Vector2 MinAndMaxNormalMovementSeconds;
-	[SerializeField] protected float FastMovementSecondsDivisor = 2;
-	[SerializeField] protected bool IsTargetAccesible = false;
 
 	#endregion
 
-	#region Data accesors
+	#region Function attributes
 
 	public bool IsAlive { get; protected set; }
+	protected float Energy;
+	protected float MovementProgress;
+	protected float NormalMoveSeconds;
+	protected float FastMoveSeconds;
+	protected Vector3 OriginPosition;
+	protected Vector3 DestinyPosition { get { return CurrentPositionToReal(); } }
 	public Vector2Int Direction
 	{
 		get { return direction; }
@@ -55,39 +60,32 @@ public abstract class Entity : WorldObject
 			transform.rotation = Quaternion.Euler( 0, RotationOffset, 0 );
 
 			if ( direction != Vector2Int.zero )
-			{
 				transform.rotation *= Quaternion.LookRotation( new Vector3( direction.x, 0, direction.y ) );
-			}
 		}
 	}
 	protected Vector2Int direction;
 
-	#endregion
-
 	protected List<EntityAction> ActionsList;
-	protected float Energy { get; private set; }
-
 	protected WorldObject Target;
-
-	protected Vector3 DestinyPosition { get { return base.WorldPositionToReal(); } }
-	protected float MovementProgress;
-	protected float NormalMovementSeconds;
+	public bool HasTarget { get { return Target != null; } }
 
 	protected System.Random RandomGenerator;
 
 	#endregion
 
+	#endregion
+
 	#region Initialization
 
-	protected override void Start()
+	protected virtual void Start()
 	{
-		base.Start();
-			
 		IsAlive = true;
-		Energy = MaxEnergyValue;
+		SetEnergy( MaxEnergyValue );
 		Direction = Vector2Int.zero;
 		RandomGenerator = new System.Random( WorldPosition2D.GetHashCode() );
-		NormalMovementSeconds = MinAndMaxNormalMovementSeconds.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxNormalMovementSeconds.y - MinAndMaxNormalMovementSeconds.x );
+		NormalMoveSeconds = MinAndMaxMoveSeconds.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxMoveSeconds.y - MinAndMaxMoveSeconds.x );
+		FastMoveSeconds = NormalMoveSeconds / FastMoveDivisor;
+		MovementProgress = 0;
 
 		ActionsList = CreateActionsList();
 	}
@@ -95,152 +93,157 @@ public abstract class Entity : WorldObject
 	protected virtual List<EntityAction> CreateActionsList()
 	{
 		return new List<EntityAction>() {
+			new EntityAction( HasToMove, MoveAction ),
 			new EntityAction( IsTouchingTarget, TouchingTargetAction ),
-			new EntityAction( () => { return true; }, SearchAndMoveToTargetAction ),
+			new EntityAction( HasToSearch, SearchAndPathToTargetAction ),
 			new EntityAction( () => { return true; }, RandomMovementAction ),
 		};
 	}
-	
-	#endregion
-
-	#region Update
-
-	protected virtual void Update()
-	{
-		if ( CurrentWorld.AutomaticSteping && IsAlive )
-		{
-			if ( transform.position != DestinyPosition )
-			{
-				IncrementEnergy ( -Move() );
-			}
-			else
-			{
-				IncrementEnergy( -DoAction() );
-			}
-		}
-	}
-
-	#region Movevement animation
-
-	protected override void CellChange( WorldCell newCell )
-	{
-		MovementProgress = 0;
-		Direction = newCell.TerrainPos - WorldPosition2D;
-	}
-
-	protected virtual float Move()
-	{
-		Vector3 origin = transform.position;
-		float currentMovementSeconds = NormalMovementSeconds;
-		float cost = MoveCost;
-
-		if ( Target != null )
-		{
-			currentMovementSeconds /= FastMovementSecondsDivisor;
-			cost *= FastMovementSecondsDivisor;
-		}
-
-		MovementProgress += Time.deltaTime / currentMovementSeconds;
-
-		Vector3 destinyPosition = DestinyPosition;
-		transform.position = new Vector3(
-			Mathf.SmoothStep( transform.position.x, destinyPosition.x, MovementProgress ),
-			Mathf.SmoothStep( transform.position.y, destinyPosition.y, MovementProgress ),
-			Mathf.SmoothStep( transform.position.z, destinyPosition.z, MovementProgress ) );
-
-		if ( transform.position == DestinyPosition )
-		{
-			EndedMovement();
-		}
-
-		return transform.position != origin ? cost : NullEnergyCost - 1;
-	}
-
-	protected virtual void EndedMovement() { }
 
 	#endregion
 
-	#region Actions	
+	#region Update step
+
+	public virtual bool Step()
+	{
+		if ( IsAlive )
+			IncrementEnergy( -DoAction() );
+		else
+			Destroy();
+
+		return IsAlive;
+	}
+
+	#endregion
+
+	#region Actions
 
 	public virtual float DoAction()
 	{
 		float cost = NullEnergyCost;
-		bool isActing = false;
-		EntityAction action;		
+		bool actionDone = false;
+		EntityAction action;
 
-		for ( int i = 0; i < ActionsList.Count && !isActing; i++ )
+		for ( int i = 0; i < ActionsList.Count && !actionDone; i++ )
 		{
 			action = ActionsList[i];
 			if ( action.Conditions() )
 			{
 				cost = action.Method();
-				isActing = cost >= NullEnergyCost;
+				actionDone = cost >= NullEnergyCost;
 			}
+		}
+
+		cost = Mathf.Max( NullEnergyCost, cost );
+		return cost;
+	}
+
+	#region Move
+
+	protected override void CellChange( WorldCell newCell )
+	{
+		Direction = newCell.TerrainPos - WorldPosition2D;
+		OriginPosition = CurrentPositionToReal();
+	}
+
+	protected virtual bool HasToMove()
+	{
+		return transform.position != DestinyPosition;
+	}
+
+	protected virtual float MoveAction()
+	{
+		float cost = NullEnergyCost;
+
+		float currentMovementSeconds = HasTarget ? FastMoveSeconds : NormalMoveSeconds;
+		MovementProgress = Mathf.Min( MovementProgress + Time.deltaTime / currentMovementSeconds, 1 );
+		if ( MovementProgress != 1 )
+		{
+			transform.position = new Vector3(
+			Mathf.Lerp( OriginPosition.x, DestinyPosition.x, MovementProgress ),
+			Mathf.Lerp( OriginPosition.y, DestinyPosition.y, MovementProgress ),
+			Mathf.Lerp( OriginPosition.z, DestinyPosition.z, MovementProgress ) );
+		}
+		else
+		{
+			transform.position = DestinyPosition;
+			MovementProgress = 0;
+			cost = EndedMovement();
 		}
 
 		return cost;
 	}
 
+	protected virtual float EndedMovement()
+	{
+		float currentMovementSeconds = HasTarget ? FastMoveSeconds : NormalMoveSeconds;
+		float speed = 1 / currentMovementSeconds;
+		return speed * Move1msCost;
+	}
+
+	#endregion
+
+	#region Touching target
+
 	protected virtual bool IsTouchingTarget()
 	{
-		bool isTouching = false;
-
-		if ( Target != null )
-		{
-			isTouching = ( IsTargetAccesible ) ? WorldPosition2D == Target.WorldPosition2D : 
-				MathFunctions.IsTouchingObjective( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible );
-		}
-
-		return isTouching;
+		return Target != null && MathFunctions.IsTouchingObjective( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible );
 	}
 
 	protected abstract float TouchingTargetAction();
 
+	#endregion
+
 	#region Search and move to target
 
-	protected virtual float SearchAndMoveToTargetAction()
+	protected abstract bool HasToSearch();
+
+	protected virtual float SearchAndPathToTargetAction()
 	{
-		float cost = NullEnergyCost - 1;
-		List<WorldObject> interestingObjects = new List<WorldObject>();
-		WorldObject closestInterestingObject = null;
-		float closestInterestingObjectDistance = float.MaxValue;
+		float cost = SearchCost;
+		List<WorldObject> interestingObjs = new List<WorldObject>();
+		WorldObject closestInterestingObj = null;
+		float closestInterestingObjDistance = float.MaxValue;
 
 		WorldObject currentWorldObject;
 		float currentDistance;
-
 		foreach ( Vector2Int position in MathFunctions.AroundPositions( WorldPosition2D, SearchRadius ) )
 		{
-			currentWorldObject = CurrentTerrain.GetCellContent( position );	// TODO : Make possible search WorldCell
+			currentWorldObject = CurrentTerrain.GetCellContent( position ); // TODO ? : Make possible search WorldCell
 
 			if ( IsInterestingObject( currentWorldObject ) )
 			{
-				interestingObjects.Add( currentWorldObject );
+				interestingObjs.Add( currentWorldObject );
 
 				currentDistance = position.Distance( WorldPosition2D );
-				if ( currentDistance < closestInterestingObjectDistance )
+				if ( currentDistance < closestInterestingObjDistance )
 				{
-					closestInterestingObjectDistance = currentDistance;
-					closestInterestingObject = currentWorldObject;
+					closestInterestingObjDistance = currentDistance;
+					closestInterestingObj = currentWorldObject;
 				}
 			}
 		}
 
-		OnInterestingObjects( closestInterestingObject, interestingObjects );
-
-		if( Target != null )
-		{
-			cost = MovementToTargetAction();
-		}
+		Target = TargetAtInterestingObjects( closestInterestingObj, interestingObjs );
+		if ( Target != null )
+			if ( cost < NullEnergyCost )
+				cost = TryPathToTarget();
+			else
+				cost += TryPathToTarget();
 
 		return cost;
 	}
 
 	protected abstract bool IsInterestingObject( WorldObject obj );
 
-	protected abstract void OnInterestingObjects( WorldObject closestInterestingObject, List<WorldObject> interestingObjects );
-
-	protected virtual float MovementToTargetAction()
+	protected virtual WorldObject TargetAtInterestingObjects( WorldObject closestInterestingObj, List<WorldObject> interestingObjs )
 	{
+		return closestInterestingObj;
+	}
+
+	protected virtual float TryPathToTarget()
+	{
+		float cost = NotActionCost;
 		bool movementDone = false;
 
 		List<Vector2Int> PathToTarget = MathFunctions.Pathfinding( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, (int)SearchRadius * 2 );
@@ -252,44 +255,43 @@ public abstract class Entity : WorldObject
 			movementDone = CurrentTerrain.TryMoveToCell( this, PathToTarget[0] );
 			if ( movementDone )
 			{
+				cost = PathToTargetCost;
 				PathToTarget.RemoveAt( 0 );
 			}
 		}
 
-		return movementDone ? MoveToTargetCost : NullEnergyCost - 1;
+		return cost;
 	}
 
 	#endregion
 
+	#region Random movement
+
 	protected virtual float RandomMovementAction()
 	{
-		bool movement = false;
+		bool movementDone = false;
 		Vector2Int nextDirection;
 
 		nextDirection = MathFunctions.PseudorandomDirection( WorldPosition2D, Direction, RandomGenerator, ConserveDirectionProbability, CurrentTerrain.IsPosAccesible );
 
 		// If exists some possible movement
 		if ( !nextDirection.Equals( Vector2Int.zero ) )
-		{
-			movement = CurrentTerrain.TryMoveToCell( this, WorldPosition2D + nextDirection );
-		}
+			movementDone = CurrentTerrain.TryMoveToCell( this, WorldPosition2D + nextDirection );
 
-		return movement ? RandomMoveCost : NullEnergyCost - 1;
+		return movementDone ? RandomMoveCost : NotActionCost;
 	}
 
 	#endregion
 
 	#endregion
 
-	#region Energy and destroy
+	#region Energy and destruction
 
 	protected virtual void SetEnergy( float value )
 	{
-		Energy = MathFunctions.Clamp( value, MinEnergyValue, MaxEnergyValue );
+		Energy = Mathf.Clamp( value, MinEnergyValue, MaxEnergyValue );
 		if ( Energy <= MinEnergyValue )
-		{
-			DestroyWorldObject();
-		}
+			Destroy();
 	}
 
 	protected virtual void IncrementEnergy( float amount )
@@ -297,11 +299,11 @@ public abstract class Entity : WorldObject
 		SetEnergy( Energy + amount );
 	}
 
-	public override void DestroyWorldObject()
+	public override void Destroy()
 	{
 		IsAlive = false;
 		CurrentWorld.DestroyedEntity( this );
-		base.DestroyWorldObject();
+		base.Destroy();
 	}
 
 	#endregion

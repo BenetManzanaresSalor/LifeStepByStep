@@ -62,9 +62,7 @@ public abstract class LC_CubeTerrain<Chunk, Cell> : LC_Terrain<Chunk, Cell> wher
 			ChunkSize, true );
 
 		foreach ( LC_Math.QuadTreeSector sector in sectors )
-		{
 			CreateElementMesh( sector.Initial, sector.Final, chunk );
-		}
 	}
 
 	/// <summary>

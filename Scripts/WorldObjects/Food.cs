@@ -7,13 +7,13 @@ public class Food : WorldObject
 	#region Settings
 
 	[Header( "Food settings" )]
-	[SerializeField] protected float BaseEnergy;
-	[SerializeField] protected float actionsToEat;
-	[SerializeField] [Range( 0, 100 )] protected float RegenerationPercentagePerSecond;
+	[SerializeField] protected float BaseEnergy = 100;
+	[SerializeField] protected float actionsToEat = 10;
+	[SerializeField] [Range( 0, 100 )] protected float RegenerationPercentagePerSecond = 10;
 
 	#endregion
 
-	#region Data accesors
+	#region Function attributes
 
 	public float Energy
 	{
@@ -23,39 +23,33 @@ public class Food : WorldObject
 		}
 		protected set
 		{
-			energy = MathFunctions.Clamp( value, 0, BaseEnergy );
+			energy = Mathf.Clamp( value, 0, BaseEnergy );
 
 			if ( energy == 0 )
 			{
-				DestroyWorldObject();
+				Destroy();
 			}
 			else
 			{
 				AdaptScale();
-
 				HasToRegenerate = energy < BaseEnergy;
 			}
 		}
 	}
-	public float ActionsToEat { get { return actionsToEat; } }
-
-	#endregion
-
 	protected float energy;
-
 	protected Vector3 InitialLocalScale;
-
+	public float ActionsToEat { get { return actionsToEat; } }	
 	protected bool HasToRegenerate;
 	protected float RegenerationMultiplier { get { return RegenerationPercentagePerSecond / 100; } }
 
 	#endregion
 
+	#endregion
+
 	#region Initialization
 
-	protected override void Start()
+	protected virtual void Start()
 	{
-		base.Start();
-
 		InitialLocalScale = transform.localScale;
 		Energy = BaseEnergy;
 	}
@@ -90,9 +84,7 @@ public class Food : WorldObject
 	protected virtual void Update()
 	{
 		if ( CurrentWorld.AutomaticSteping && HasToRegenerate )
-		{
 			Regenerate();
-		}
 	}
 
 	protected virtual void Regenerate()

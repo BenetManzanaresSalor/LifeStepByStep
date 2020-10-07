@@ -67,7 +67,7 @@ public class LC_TerrainInstanciable : LC_Terrain<LC_Chunk<LC_Cell>,LC_Cell>
 			}
 
 			if ( GUILayout.Button( "Destroy" ) )
-				myTarget.DestroyTerrain( true );
+				myTarget.DestroyTerrain();
 		}
 	}
 

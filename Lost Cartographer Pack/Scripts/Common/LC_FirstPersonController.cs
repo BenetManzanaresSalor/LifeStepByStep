@@ -10,76 +10,189 @@ public class LC_FirstPersonController : MonoBehaviour
 
 	#region Settings
 
-	[SerializeField] protected float MouseSensitivity = 100f;
-	[SerializeField] protected float XandZvelocity = 15f;	
-	[SerializeField] protected float JumpHeight = 3f;
-	[SerializeField] protected float Gravity = -9.807f;
-	[SerializeField] protected Transform GroundCheck;
-	[SerializeField] protected float GroundCheckRadius = 1f;
-	[SerializeField] protected LayerMask WhatIsGround;
-	[SerializeField] protected bool FreeVerticalMovement = false;
-	[SerializeField] protected float Yvelocity = 15f;
+	[Header( "Global settings" )]
+	[SerializeField] public bool AutoInitialize = true;
+	[SerializeField] public bool MoveEnabled = true;
+	[SerializeField] public bool RotateEnabled = true;
+
+	[SerializeField] public float MouseSensitivity = 100f;
+	[SerializeField] public float HoritzontalVelocity = 10f;
+	[SerializeField] public bool FreeVerticalMovement = false;
+	[SerializeField] public float FreeVerticalVelocity = 15f;
+
+	[Header( "Jump settings" )]
+	[SerializeField] public float JumpHeight = 3f;
+	[SerializeField] public bool UseMoreRealisticJump = true;
+	[SerializeField] public float MoreRealisticJumpVelocityDivisor = 2f;
+	[SerializeField] public Transform SphericGroundCheck;
+	[SerializeField] public LayerMask WhatIsGround;
 
 	#endregion
 
-	protected Transform CameraTransform;
-	protected float XRotation;
+	#region Function attributes
 
 	protected CharacterController Controller;
-	protected float VerticalVelocity;
-	protected bool IsGrounded;	
+	protected Camera PlayerCamera;
+	protected Transform CameraTransform { get => PlayerCamera.transform; }
+	protected Vector3 CurrentVelocity;
+	public float VerticalRotationRange = 180f;
+	public const float Gravity = -9.807f;
+	protected bool IsGrounded;
+	protected Vector2 VelocityBeforeJump;
 
 	#endregion
 
-	void Start()
-	{
-		CameraTransform = Camera.main.transform;
-		XRotation = 0;
+	#endregion
 
-		Controller = GetComponent<CharacterController>();
-		VerticalVelocity = FreeVerticalMovement ? 0 : Gravity;
-		IsGrounded = false;		
+	#region Initialization
+
+	protected virtual void Start()
+	{
+		if ( AutoInitialize )
+			Initialize();
 	}
 
-	void Update()
+	public virtual void Initialize()
 	{
-		// Camera movement
-		float mouseX = Input.GetAxis( "Mouse X" ) * Time.deltaTime * MouseSensitivity;
-		float mouseY = Input.GetAxis( "Mouse Y" ) * Time.deltaTime * MouseSensitivity;
+		if ( Controller == null )
+			Controller = GetComponent<CharacterController>();
+		if ( PlayerCamera == null )
+			PlayerCamera = GetComponentInChildren<Camera>();
+	}
 
-		XRotation = LC_Math.Clamp( XRotation - mouseY, -90f, 90f );
+	#endregion
 
-		CameraTransform.localRotation = Quaternion.Euler( XRotation, 0f, 0f );
-		transform.Rotate( Vector3.up * mouseX );
+	#region Movement
 
-		// X-Z movement
-		Controller.Move( ( transform.right * Input.GetAxis( "Horizontal" ) + transform.forward * Input.GetAxis( "Vertical" ) ) *
-			XandZvelocity * Time.deltaTime );
+	protected virtual void Update()
+	{
+		IsGrounded = Physics.CheckSphere( SphericGroundCheck.position, SphericGroundCheck.lossyScale.x, WhatIsGround );
 
-		// Y movement
-		if ( FreeVerticalMovement )
+		if ( RotateEnabled )
+			Rotate( ComputeRotation() );
+
+		if ( MoveEnabled )
+			Move( ComputeVelocity() );
+	}
+
+	protected virtual Vector3 ComputeRotation()
+	{
+		Vector3 newRotation = Vector3.zero;
+		newRotation.x = Input.GetAxis( "Mouse Y" ) * MouseSensitivity * Time.deltaTime;
+		newRotation.y = Input.GetAxis( "Mouse X" ) * MouseSensitivity * Time.deltaTime;
+
+		return newRotation;
+	}
+
+	protected virtual void Rotate( Vector3 newRotation )
+	{
+		// Rotate at X
+		Vector3 cameraRotation = CameraTransform.localEulerAngles;
+		cameraRotation.x = ApplyRotationRange( cameraRotation.x - newRotation.x, VerticalRotationRange );
+		CameraTransform.localEulerAngles = cameraRotation;
+
+		// Rotate at Y
+		transform.Rotate( Vector3.up * newRotation.y );
+	}
+
+	protected virtual Vector3 ComputeVelocity()
+	{
+		Vector3 newVelocity = Vector3.zero;
+
+		Vector2 planeVelocity = Vector2.zero;
+		Vector3 direction3D = transform.right * Input.GetAxis( "Horizontal" ) + transform.forward * Input.GetAxis( "Vertical" );
+		Vector2 direction2D = new Vector2( direction3D.x, direction3D.z );
+
+		if ( IsGrounded || !UseMoreRealisticJump )
 		{
-			VerticalVelocity = Input.GetAxis( "Jump" ) * Yvelocity; // Check up
-			if ( VerticalVelocity == 0 && Input.GetKey( KeyCode.LeftShift ) ) // Check down
-			{
-				VerticalVelocity = -Yvelocity;
-			}
+			planeVelocity = direction2D * HoritzontalVelocity;
 		}
 		else
 		{
-			IsGrounded = Physics.CheckSphere( GroundCheck.position, GroundCheckRadius, WhatIsGround );
-			if ( IsGrounded )
-			{
-				if ( VerticalVelocity < 0 )
-					VerticalVelocity = -2f;
-
-				if ( Input.GetButtonDown( "Jump" ) )
-					VerticalVelocity = Mathf.Sqrt( JumpHeight * -2f * Gravity );
-			}
-
-			VerticalVelocity += Gravity * Time.deltaTime;
+			float scalarProduct = Vector2.Dot( direction2D, VelocityBeforeJump.normalized );
+			planeVelocity = direction2D * scalarProduct * HoritzontalVelocity +
+				direction2D * ( ( 1f - scalarProduct ) * HoritzontalVelocity / MoreRealisticJumpVelocityDivisor );
 		}
 
-		Controller.Move( Vector3.up * VerticalVelocity * Time.deltaTime );
+		newVelocity.x = planeVelocity.x;
+		newVelocity.y = ComputeVerticalVelocity();
+		newVelocity.z = planeVelocity.y;
+
+		return newVelocity;
 	}
+
+	protected virtual float ComputeVerticalVelocity()
+	{
+		float velocity = CurrentVelocity.y;
+
+		if ( FreeVerticalMovement )
+		{
+			velocity = Input.GetAxis( "Jump" ) * FreeVerticalVelocity;    // Check up
+			if ( velocity == 0 && Input.GetKey( KeyCode.LeftShift ) )  // Check down
+				velocity = -FreeVerticalVelocity;
+		}
+		else
+		{
+			if ( IsGrounded )
+			{
+				if ( velocity < 0 )
+					velocity = Gravity / 3f;    // When is grounded, force to touch ground (the ground check has a radius)
+
+				if ( Input.GetButtonDown( "Jump" ) )
+				{
+					VelocityBeforeJump = new Vector2( CurrentVelocity.x, CurrentVelocity.z );
+					velocity = Mathf.Sqrt( JumpHeight * -2f * Gravity );
+				}
+			}
+			else
+			{
+				velocity += Gravity * Time.deltaTime;
+			}
+		}
+
+		return velocity;
+	}
+
+	protected virtual void Move( Vector3 velocity )
+	{
+		CurrentVelocity = velocity;
+		Controller.Move( CurrentVelocity * Time.deltaTime );
+	}
+
+	#endregion
+
+	#region Auxiliar
+
+	public virtual float ApplyRotationRange( float rotation, float rotationRange )
+	{
+		rotation = Mod( rotation, 360 );
+		float topAngle = Mod( -VerticalRotationRange / 2f, 360 );
+		float bottomAngle = VerticalRotationRange / 2f;
+		if ( rotation > bottomAngle && rotation < topAngle )
+		{
+			float disToBottom = rotation - bottomAngle;
+			float disToTop = topAngle - rotation;
+			rotation = ( disToBottom < disToTop ) ? bottomAngle : topAngle;
+		}
+
+		return rotation;
+	}
+
+	public static float Mod( float x, float m )
+	{
+		float r = x % m;
+		return r < 0 ? r + m : r;
+	}
+
+	#endregion
+
+	#region External use
+
+	public virtual RaycastHit Raycast( float raycastingRange, LayerMask raycastingMask )
+	{
+		Physics.Raycast( CameraTransform.position, CameraTransform.forward, out RaycastHit hit, raycastingRange, raycastingMask, QueryTriggerInteraction.Collide );
+		return hit;
+	}
+
+	#endregion
 }

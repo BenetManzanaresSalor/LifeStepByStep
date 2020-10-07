@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7070198154116340412}
   - component: {fileID: 7070198154116340413}
   - component: {fileID: 7070198154116340410}
-  - component: {fileID: 5428606464154138628}
+  - component: {fileID: -3144363907454861943}
   - component: {fileID: 2270702205585900818}
   m_Layer: 0
   m_Name: Food
@@ -80,7 +80,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
---- !u!114 &5428606464154138628
+--- !u!114 &-3144363907454861943
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -89,12 +89,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 7070198154116340408}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96237986bc21ab24e8a6c51734c84a18, type: 3}
+  m_Script: {fileID: 11500000, guid: fe1358349786ca840b00eb6eb449d614, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   identificator: 102
   VerticalOffset: 0
   RotationOffset: 0
+  BaseEnergy: 300
+  actionsToEat: 100
+  RegenerationPercentagePerSecond: 5
 --- !u!114 &2270702205585900818
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,30 +1,22 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class LookAt : MonoBehaviour
 {
 	[SerializeField] private bool AtCamera = true;
-	[SerializeField] private Transform AlternativeTarget;	
+	[SerializeField] private Transform AlternativeTarget;
 
-    void Start()
-    {
+	void Start()
+	{
 		if ( AtCamera )
-		{
 			AlternativeTarget = FindObjectOfType<Camera>().transform;
-		}
 
 		if ( AlternativeTarget == null )
-		{
-			Debug.LogError( $"LookAt {name} has null target" );		
-		}
-    }
+			Debug.LogError( $"LookAt {name} has null target" );
+	}
 
-    void Update()
-    {
+	void Update()
+	{
 		if ( AlternativeTarget != null )
-		{
 			transform.LookAt( AlternativeTarget );
-		}		
-    }
+	}
 }

@@ -5,14 +5,20 @@ public class WorldCell : LC_Cell
 	#region Attributes
 
 	public WorldObject Content { get; protected set; }
+	public float RealHeight { get; protected set; }
+	public bool IsWater { get; protected set; }
 
 	#endregion
 
-	public WorldCell( Vector2Int terrainPosition, float height ) : base( terrainPosition, height ) { }
+	public WorldCell( Vector2Int terrainPosition, float renderHeight, float realHeight, bool isWater ) : base( terrainPosition, renderHeight )
+	{
+		RealHeight = realHeight;
+		IsWater = isWater;
+	}
 
 	public bool IsFree()
 	{
-		return Content == null;
+		return !IsWater && Content == null;
 	}
 
 	public bool TrySetContent( WorldObject content )

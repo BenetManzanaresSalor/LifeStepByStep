@@ -169,12 +169,8 @@ public abstract class LC_Terrain<Chunk, Cell> : LC_GenericTerrain<Chunk, Cell> w
 	protected override void ComputeMesh( Chunk chunk )
 	{
 		for ( int x = 0; x < chunk.Cells.GetLength( 0 ); x++ )
-		{
 			for ( int z = 0; z < chunk.Cells.GetLength( 1 ); z++ )
-			{
 				CreateCellMesh( x, z, chunk );
-			}
-		}
 
 		ComputeNormals( chunk );
 	}

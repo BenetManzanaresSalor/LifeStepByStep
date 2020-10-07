@@ -177,7 +177,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TargetTexture: {fileID: 8400000, guid: 13cbf437ffd43e249975439a48aaaa05, type: 2}
-  NumCellsWidthAndHeight: {x: 256, y: 256}
+  NumCellsWidthAndHeight: {x: 512, y: 512}
   ResolutionDivider: {x: 4, y: 4}
   TextureWidthAndHeight: {x: 256, y: 256}
   FramesBtwUpdates: 2
@@ -288,6 +288,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3543242142647039406, guid: b77220f7053d8f64c843de6f3ba6e25c,
+        type: 3}
+      propertyPath: HoritzontalVelocity
+      value: 75
+      objectReference: {fileID: 0}
+    - target: {fileID: 3543242142647039406, guid: b77220f7053d8f64c843de6f3ba6e25c,
+        type: 3}
+      propertyPath: FreeVerticalVelocity
+      value: 75
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b77220f7053d8f64c843de6f3ba6e25c, type: 3}

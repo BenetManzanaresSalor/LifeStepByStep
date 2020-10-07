@@ -1,5 +1,6 @@
 ﻿using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
 {
@@ -7,8 +8,11 @@ public class UIController : MonoBehaviour
 
 	#region Settings
 
-	[SerializeField] protected TextMeshProUGUI StatusText;
 	[SerializeField] protected TextMeshProUGUI FpsText;
+	[SerializeField] protected TextMeshProUGUI StatusText;
+	[SerializeField] protected Image PlayPauseIcon;
+	[SerializeField] protected Sprite PlaySprite;
+	[SerializeField] protected Sprite PauseSprite;
 
 	#endregion
 
@@ -16,11 +20,16 @@ public class UIController : MonoBehaviour
 
 	protected void Update()
 	{
-		FpsText.text = $"FPS = {1f / Time.deltaTime}";
+		FpsText.text = $"{( 1f / Time.deltaTime ).ToString( "f2" )} FPS";
 	}
 
 	public void SetStatus( string status )
 	{
 		StatusText.text = status;
+	}
+
+	public void SetAutomaticSteping( bool enabled )
+	{
+		PlayPauseIcon.sprite = enabled ? PauseSprite : PlaySprite;
 	}
 }

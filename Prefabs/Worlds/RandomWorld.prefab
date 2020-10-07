@@ -44,13 +44,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 12c370bbca7a4aa4ba6751ee0c44cf5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  WorldObjects:
-  - {fileID: 5428606464154138628, guid: 57f4a5c313301aa40b1fa56af54e78c2, type: 3}
-  - {fileID: 7744751330611647402, guid: ad7b456410e9f1c4194ed61395cf5853, type: 3}
+  Animals:
   - {fileID: 8095195492649409632, guid: 2611a32111a5cfe4181f0535578eb70d, type: 3}
+  Foods:
+  - {fileID: -3144363907454861943, guid: 57f4a5c313301aa40b1fa56af54e78c2, type: 3}
+  Obstacles:
+  - {fileID: 7744751330611647402, guid: ad7b456410e9f1c4194ed61395cf5853, type: 3}
+  MaxUpdateTime: 0.008333334
   UseRandomSeed: 1
   Seed: 0
-  ObjectProbability: 2
+  AnimalProbability: 5
+  FoodProbability: 1
+  ObstacleProbability: 3
 --- !u!114 &6094329596018464402
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -66,24 +71,25 @@ MonoBehaviour:
   Player: {fileID: 0}
   CellSize: {x: 2, y: 1, z: 2}
   ChunkSizeLevel: 4
-  ChunkRenderDistance: 2
+  ChunkRenderDistance: 1
   HasCollider: 0
   DynamicChunkLoading: 0
   ParallelChunkLoading: 1
-  RenderMaterial: {fileID: 2100000, guid: 3d0ecbbb22b864646875e34c59e6541b, type: 2}
+  RenderMaterial: {fileID: 2100000, guid: 51fbdf40bac75434884646ae45aab9ee, type: 2}
   MaxUpdateTime: 0.008333334
-  HeightsDivisor: 75
+  HeightsDivisor: 85
   MaxHeight: 50
   UseRandomSeed: 1
   Seed: 0
   Octaves: 4
   Persistance: 0.25
   Lacunarity: 2.5
-  RenderType: 2
-  TextureColumnsAndRows: {x: 1, y: 3}
+  RenderType: 0
+  TextureColumnsAndRows: {x: 3, y: 2}
   TextureMarginRelation: 8
   HeightShaderColors:
   - {r: 0.9176471, g: 0.8862746, b: 0.80392164, a: 1}
   - {r: 0.5568628, g: 0.5803922, b: 0.2901961, a: 1}
   - {r: 0.3019608, g: 0.34901962, b: 0.16470589, a: 1}
   UseSplitAndMerge: 1
+  WaterHeight: 10

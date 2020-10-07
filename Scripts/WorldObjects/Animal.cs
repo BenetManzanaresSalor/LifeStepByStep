@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class Animal : Entity
@@ -9,15 +8,42 @@ public class Animal : Entity
 	#region Settings
 
 	[Header( "Animal settings" )]
-	[SerializeField] [Min( NullEnergyCost )] protected float EatingCost;
-	[SerializeField] [Min( 0 )] protected float NumMovementsPerBaseEnergy = 10;
-	[SerializeField] [Range( MinEnergyValue, MaxEnergyValue )] protected float ProblematicEnergyPercentage = 25;
+	[SerializeField] [Min( NullEnergyCost )] protected float EatingCost = 0;
 	[SerializeField] protected Image EnergyBar;
+	[SerializeField] [Range( MinEnergyValue, MaxEnergyValue )] protected float ProblematicEnergyPercentage = 25;
+	[SerializeField] protected Color GoodEnergyColor = Color.green;
+	[SerializeField] protected Color ProblematicEnergyColor = Color.red;
+	[SerializeField] protected Image HasTargetImage;
 	[SerializeField] protected ParticleSystem DeathParticles;
 
 	#endregion
-	protected bool ProblematicEnergy { get { return Energy < ProblematicEnergyPercentage; } }
+
+	#region Function attributes
+
+	protected bool HasProblematicEnergy { get { return Energy < ProblematicEnergyPercentage; } }
 	protected Food FoodTarget { get { return Target as Food; } }
+
+	#endregion
+
+	#endregion
+
+	#region Initialization
+
+	protected override void Start()
+	{
+		base.Start();
+		HasTargetImage.enabled = false;
+	}
+
+	#endregion
+
+	#region Update step
+
+	public override bool Step()
+	{
+		HasTargetImage.enabled = Target != null;
+		return base.Step();
+	}
 
 	#endregion
 
@@ -26,25 +52,26 @@ public class Animal : Entity
 	protected override float TouchingTargetAction()
 	{
 		if ( Energy < MaxEnergyValue )
-		{
 			IncrementEnergy( FoodTarget.GetEnergy() );
-		}
-		else
-		{
+
+		if ( Energy == MaxEnergyValue )
 			Target = null;
-		}
 
 		return EatingCost;
 	}
 
-	protected override bool IsInterestingObject( WorldObject obj )
+	protected override bool HasToSearch()
 	{
-		return ProblematicEnergy && obj is Food;
+		bool hasToSearch = HasProblematicEnergy;
+		if ( !hasToSearch )
+			Target = null;
+
+		return hasToSearch;
 	}
 
-	protected override void OnInterestingObjects( WorldObject closestInterestingObject, List<WorldObject> interestingObjects )
+	protected override bool IsInterestingObject( WorldObject obj )
 	{
-		Target = closestInterestingObject;
+		return HasProblematicEnergy && obj is Food;
 	}
 
 	#endregion
@@ -54,19 +81,17 @@ public class Animal : Entity
 	protected override void SetEnergy( float value )
 	{
 		base.SetEnergy( value );
-		if ( EnergyBar != null )
-		{
-			EnergyBar.fillAmount = Mathf.InverseLerp( MinEnergyValue, MaxEnergyValue, Energy );
-		}
+
+		EnergyBar.fillAmount = Mathf.InverseLerp( MinEnergyValue, MaxEnergyValue, Energy );
+		EnergyBar.color = HasProblematicEnergy ? ProblematicEnergyColor : GoodEnergyColor;
 	}
 
-	public override void DestroyWorldObject()
+	public override void Destroy()
 	{
 		ParticleSystem particles = Instantiate( DeathParticles, this.transform.position, Quaternion.identity );
-
 		Destroy( particles.gameObject, particles.main.duration );
 
-		base.DestroyWorldObject();
+		base.Destroy();
 	}
 
 	#endregion

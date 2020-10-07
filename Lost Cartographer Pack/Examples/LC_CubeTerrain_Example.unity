@@ -150,10 +150,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Player: {fileID: 812618136}
-  CellSize: {x: 1, y: 1, z: 1}
+  CellSize: {x: 2, y: 1, z: 2}
   ChunkSizeLevel: 4
-  ChunkRenderDistance: 10
-  HasCollider: 1
+  ChunkRenderDistance: 12
+  HasCollider: 0
   DynamicChunkLoading: 1
   ParallelChunkLoading: 1
   RenderMaterial: {fileID: 2100000, guid: 3d0ecbbb22b864646875e34c59e6541b, type: 2}
@@ -244,8 +244,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TargetTexture: {fileID: 8400000, guid: 13cbf437ffd43e249975439a48aaaa05, type: 2}
-  NumCellsWidthAndHeight: {x: 256, y: 256}
-  ResolutionDivider: {x: 4, y: 4}
+  NumCellsWidthAndHeight: {x: 512, y: 512}
+  ResolutionDivider: {x: 8, y: 8}
   TextureWidthAndHeight: {x: 256, y: 256}
   FramesBtwUpdates: 2
   MaxUpdateTime: 0.008333334

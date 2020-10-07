@@ -1,9 +1,16 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 [RequireComponent( typeof( GenericWorld ) )]
 public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 {
 	#region Attributes
+
+	#region Settings
+
+	[SerializeField] public float WaterHeight;
+
+	#endregion
 
 	#region Function attributes
 
@@ -20,7 +27,7 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 		if ( World == null )
 			World = GetComponent<GenericWorld>();
 
-		Player = FindObjectOfType<FirstPersonController>().transform;
+		Player = FindObjectOfType<LC_FirstPersonController>().transform;
 
 		base.Generate();
 	}
@@ -39,6 +46,37 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 		return World.CreateCell( chunkX, chunkZ, chunk );
 	}
 
+	protected override void SplitAndMergeMesh( LC_Chunk<WorldCell> chunk )
+	{
+		List<LC_Math.QuadTreeSector> sectors = LC_Math.SplitAndMerge(
+			( x, z ) => { return chunk.Cells[x, z].RealHeight; },
+			( x, y ) => { return x == y; },
+			ChunkSize, true );
+
+		foreach ( LC_Math.QuadTreeSector sector in sectors )
+			CreateElementMesh( sector.Initial, sector.Final, chunk );
+	}
+
+	protected override Vector2Int GetTexPos( WorldCell cell, LC_Chunk<WorldCell> chunk )
+	{
+		float value;
+		Vector2Int texPos = Vector2Int.zero;
+
+		if ( cell.IsWater )
+		{
+			texPos.y = 0;
+			value = Mathf.InverseLerp( 0, WaterHeight, cell.RealHeight );
+		}
+		else
+		{
+			texPos.y = 1;
+			value = Mathf.InverseLerp( WaterHeight, MaxHeight, cell.Height );
+		}
+		texPos.x = Mathf.RoundToInt( value * ( TextureColumnsAndRows.x - 1 ) );
+
+		return texPos;
+	}
+
 	protected override void BuildChunk( LC_Chunk<WorldCell> chunk )
 	{
 		base.BuildChunk( chunk );
@@ -52,13 +90,17 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 			{
 				WorldCell cell = chunk.Cells[x, y];
 
-				WorldObject worldObj = World.CreateWorldObject( cell );
-				if ( worldObj != null )
+				if ( cell.IsFree() )
 				{
-					worldObj = Instantiate( worldObj, chunk.Obj.transform );
-					cell.TrySetContent( worldObj );
-					worldObj.SetWorld( World );
-					worldObj.CurrentCell = cell;
+					WorldObject worldObj = World.GetWorldObject( cell );
+					if ( worldObj != null )
+					{
+						worldObj = Instantiate( worldObj, chunk.Obj.transform );
+						cell.TrySetContent( worldObj );
+						worldObj.SetWorld( World );
+						worldObj.CurrentCell = cell;
+						World.WorldObjectInstanciated( worldObj );
+					}
 				}
 			}
 	}
@@ -86,11 +128,13 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 
 	public bool TryMoveToCell( WorldObject worldObj, Vector2Int cellPos )
 	{
-		WorldCell cell = GetCell( cellPos );
-		bool canMove = cell != null && cell.TrySetContent( worldObj );
-
+		bool canMove = IsPosAccesible( cellPos );
 		if ( canMove )
+		{
+			WorldCell cell = GetCell( cellPos );
+			cell.TrySetContent( worldObj );
 			worldObj.CurrentCell = cell;
+		}
 
 		return canMove;
 	}

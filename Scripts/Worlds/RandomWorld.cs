@@ -9,7 +9,9 @@ public class RandomWorld : GenericWorld
 	[Header( "Random world settings" )]
 	[SerializeField] protected bool UseRandomSeed = true;
 	[SerializeField] protected int Seed;
-	[SerializeField] [Range( 0, 100 )] protected float ObjectProbability;
+	[SerializeField] [Range( 0, 100 )] protected float AnimalProbability;
+	[SerializeField] [Range( 0, 100 )] protected float FoodProbability;
+	[SerializeField] [Range( 0, 100 )] protected float ObstacleProbability;
 
 	#endregion
 
@@ -31,15 +33,29 @@ public class RandomWorld : GenericWorld
 		RandomGenerator = UseRandomSeed ? new System.Random() : new System.Random( Seed );
 		Terrain.RandomGenerator = RandomGenerator;
 
-		Terrain.Generate();
+		base.Generate();
 	}
 
-	public override WorldObject CreateWorldObject( WorldCell cell )
+	public override WorldObject GetWorldObject( WorldCell cell )
 	{
 		WorldObject worldObj = null;
 
-		if ( RandomGenerator.Next( 1, 100 ) <= ObjectProbability )
-			worldObj = WorldObjects[RandomGenerator.Next( 0, WorldObjects.Length )];
+		int ObjectType = RandomGenerator.Next( 1, 4 );
+		switch ( ObjectType )
+		{
+			case 1:
+				if ( RandomGenerator.Next( 1, 100 ) <= AnimalProbability )
+					worldObj = Animals[RandomGenerator.Next( 0, Animals.Length )];
+				break;
+			case 2:
+				if ( RandomGenerator.Next( 1, 100 ) <= FoodProbability )
+					worldObj = Foods[RandomGenerator.Next( 0, Foods.Length )];
+				break;
+			case 3:
+				if ( RandomGenerator.Next( 1, 100 ) <= ObstacleProbability )
+					worldObj = Obstacles[RandomGenerator.Next( 0, Obstacles.Length )];
+				break;
+		}
 
 		return worldObj;
 	}
