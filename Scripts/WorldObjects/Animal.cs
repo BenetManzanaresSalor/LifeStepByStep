@@ -11,9 +11,13 @@ public class Animal : Entity
 	[SerializeField] [Min( NullEnergyCost )] protected float EatingCost = 0;
 	[SerializeField] protected Image EnergyBar;
 	[SerializeField] [Range( MinEnergyValue, MaxEnergyValue )] protected float ProblematicEnergyPercentage = 25;
+
+	[Header( "Animal state settings" )]
 	[SerializeField] protected Color GoodEnergyColor = Color.green;
 	[SerializeField] protected Color ProblematicEnergyColor = Color.red;
+	[SerializeField] protected Image SearchingImage;
 	[SerializeField] protected Image HasTargetImage;
+	[SerializeField] protected LineRenderer TargetLineRenderer;
 	[SerializeField] protected ParticleSystem DeathParticles;
 
 	#endregion
@@ -21,7 +25,6 @@ public class Animal : Entity
 	#region Function attributes
 
 	protected bool HasProblematicEnergy { get { return Energy < ProblematicEnergyPercentage; } }
-	protected Food FoodTarget { get { return Target as Food; } }
 
 	#endregion
 
@@ -41,8 +44,32 @@ public class Animal : Entity
 
 	public override bool Step()
 	{
-		HasTargetImage.enabled = Target != null;
-		return base.Step();
+		bool isAlive = base.Step();
+		UpdateStateRenderer();
+
+		return isAlive;
+	}
+
+	protected virtual void UpdateStateRenderer()
+	{
+		bool hasTarget = HasTarget;
+		bool isSearching = !hasTarget && HasToSearch();
+
+		SearchingImage.enabled = isSearching;
+
+		HasTargetImage.enabled = hasTarget;
+
+		if ( CurrentWorld.TargetRays )
+		{
+			TargetLineRenderer.enabled = hasTarget;
+			if ( hasTarget )
+			{
+				TargetLineRenderer.SetPosition( 0, transform.position );
+				TargetLineRenderer.SetPosition( 1, Target.transform.position );
+			}
+		}
+		else
+			TargetLineRenderer.enabled = false;
 	}
 
 	#endregion
@@ -52,7 +79,7 @@ public class Animal : Entity
 	protected override float TouchingTargetAction()
 	{
 		if ( Energy < MaxEnergyValue )
-			IncrementEnergy( FoodTarget.GetEnergy() );
+			IncrementEnergy( ( Target as Food ).GetEnergy() );
 
 		if ( Energy == MaxEnergyValue )
 			Target = null;

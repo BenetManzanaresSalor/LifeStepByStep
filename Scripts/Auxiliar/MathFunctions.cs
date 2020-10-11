@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 
@@ -174,16 +173,16 @@ public static class MathFunctions
 	/// <param name="origin">Start position ( will not be included in result path ).</param>
 	/// <param name="objective">Objective position.</param>
 	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
-	/// <param name="maxPathLenght">Maximum path lenght of a non-direct path.</param>
+	/// <param name="maxCheckedPositions">Maximum number of checked positions for a non-direct path.</param>
 	/// <returns>List of the positions of the best path found. Not includes the origin position.</returns>
-	public static List<Vector2Int> Pathfinding( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible, int maxPathLenght )
+	public static List<Vector2Int> Pathfinding( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible, int maxCheckedPositions )
 	{
 		// First, search direct path
 		List<Vector2Int> path = DirectPath( origin, objective, isPositionAccessible );
 
 		// If the direct path not arrives to target, use A*
 		if ( path.Count == 0 || !IsTouchingObjective( path[path.Count - 1], objective, isPositionAccessible ) )
-			path = AstarPath( origin, objective, isPositionAccessible, maxPathLenght );
+			path = AstarPath( origin, objective, isPositionAccessible, maxCheckedPositions );
 
 		return path;
 	}
@@ -290,13 +289,9 @@ public static class MathFunctions
 
 			// Check end of path
 			if ( IsTouchingObjective( currentPositionInPath.Position, objective, isPositionAccessible ) )
-			{
 				objectiveReached = true;
-			}
 			else
-			{
 				destinyNotAccessible = remainingPositions.Count == 0 || checkedPositions.Count > maxCheckedPositions;
-			}
 		}
 
 		// If is impossible to acces to the target use the closest position as desitiny
@@ -554,15 +549,20 @@ public static class MathFunctions
 			}
 
 			// If any other direction isn't possible, check the opposite to last direction
-			if( nextDirection.Equals( Vector2Int.zero ) )
+			if ( nextDirection.Equals( Vector2Int.zero ) )
 			{
 				possibleDirection = lastDirection * -1;
 				if ( IsPossibleDirection( origin, possibleDirection, isPositionAccessible ) )
 					nextDirection = possibleDirection;
-			}			
+			}
 		}
 
 		return nextDirection;
+	}
+
+	public static double RandomDouble( System.Random randomGenerator, double minInclusive, double maxExclusive )
+	{
+		return minInclusive + randomGenerator.NextDouble() * ( maxExclusive - minInclusive );
 	}
 
 	#endregion

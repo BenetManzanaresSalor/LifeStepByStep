@@ -8,6 +8,7 @@ public class WorldController : MonoBehaviour
 	#region Settings
 
 	[SerializeField] protected Vector3 PlayerOffset = Vector3.up;
+	[SerializeField] public bool TargetRays = false;
 
 	#endregion
 
@@ -58,7 +59,7 @@ public class WorldController : MonoBehaviour
 			ToggleAutomaticSteping();
 
 		SetPlayerPos( CurrentWorld.transform.position );
-		CurrentWorld.Generate();
+		CurrentWorld.Generate( this );
 		IniPlayerPos();
 	}
 

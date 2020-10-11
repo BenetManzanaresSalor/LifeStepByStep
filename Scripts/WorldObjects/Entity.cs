@@ -64,6 +64,7 @@ public abstract class Entity : WorldObject
 		}
 	}
 	protected Vector2Int direction;
+	protected bool TargetAccesible = false;
 
 	protected List<EntityAction> ActionsList;
 	protected WorldObject Target;
@@ -244,13 +245,16 @@ public abstract class Entity : WorldObject
 	protected virtual float TryPathToTarget()
 	{
 		float cost = NotActionCost;
+		TargetAccesible = false;
 		bool movementDone = false;
 
-		List<Vector2Int> PathToTarget = MathFunctions.Pathfinding( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, (int)SearchRadius * 2 );
+		List<Vector2Int> PathToTarget = MathFunctions.Pathfinding( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, (int)SearchRadius );
 
 		// If a path to target is possible
-		if ( PathToTarget.Count > 0 && MathFunctions.IsTouchingObjective( PathToTarget[PathToTarget.Count - 1], Target.WorldPosition2D, CurrentTerrain.IsPosAccesible ) )
+		if ( PathToTarget.Count > 0 )
 		{
+			TargetAccesible = MathFunctions.IsTouchingObjective( PathToTarget[PathToTarget.Count - 1], Target.WorldPosition2D, CurrentTerrain.IsPosAccesible );
+
 			// Try movement
 			movementDone = CurrentTerrain.TryMoveToCell( this, PathToTarget[0] );
 			if ( movementDone )

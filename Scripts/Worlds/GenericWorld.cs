@@ -18,11 +18,14 @@ public abstract class GenericWorld : MonoBehaviour
 
 	#region Function attributes
 
+	public WorldController Controller { get; protected set; }
 	public WorldTerrain Terrain { get; protected set; }
 	protected List<Entity> EntitiesList;
 	public bool AutomaticSteping { get; protected set; }
 	public float UpdateIniTime { get; protected set; }
 	protected int EntityIdx = 0;
+
+	public bool TargetRays { get => Controller.TargetRays; }
 
 	#endregion
 
@@ -30,8 +33,10 @@ public abstract class GenericWorld : MonoBehaviour
 
 	#region Initialization
 
-	public virtual void Generate()
+	public virtual void Generate( WorldController worldController )
 	{
+		Controller = worldController;
+
 		if ( Terrain == null )
 			Terrain = GetComponent<WorldTerrain>();
 
@@ -81,7 +86,7 @@ public abstract class GenericWorld : MonoBehaviour
 				if ( !isAlive )
 				{
 					EntitiesList.RemoveAt( EntityIdx );
-					EntityIdx = ( EntityIdx - 1 ) % EntitiesList.Count;	// Adjust because of remove
+					EntityIdx = ( EntityIdx - 1 ) % EntitiesList.Count; // Adjust because of remove
 				}
 
 				numIterations++;

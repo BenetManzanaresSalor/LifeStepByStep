@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f490a4d435ccfc4b8da0caf702a0757, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PlayerOffset: {x: 0, y: 1, z: 0}
+  PlayerOffset: {x: 0, y: 10, z: 0}
 --- !u!1001 &5584640436146288190
 PrefabInstance:
   m_ObjectHideFlags: 0

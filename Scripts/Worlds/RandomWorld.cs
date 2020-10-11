@@ -25,7 +25,7 @@ public class RandomWorld : GenericWorld
 
 	#region Initialization
 
-	public override void Generate()
+	public override void Generate( WorldController worldController )
 	{
 		if ( Terrain == null )
 			Terrain = GetComponent<WorldTerrain>();
@@ -33,7 +33,7 @@ public class RandomWorld : GenericWorld
 		RandomGenerator = UseRandomSeed ? new System.Random() : new System.Random( Seed );
 		Terrain.RandomGenerator = RandomGenerator;
 
-		base.Generate();
+		base.Generate( worldController );
 	}
 
 	public override WorldObject GetWorldObject( WorldCell cell )
@@ -44,15 +44,15 @@ public class RandomWorld : GenericWorld
 		switch ( ObjectType )
 		{
 			case 1:
-				if ( RandomGenerator.Next( 1, 100 ) <= AnimalProbability )
+				if ( AnimalProbability > MathFunctions.RandomDouble( RandomGenerator, 0, 100 )  )
 					worldObj = Animals[RandomGenerator.Next( 0, Animals.Length )];
 				break;
 			case 2:
-				if ( RandomGenerator.Next( 1, 100 ) <= FoodProbability )
+				if ( FoodProbability > MathFunctions.RandomDouble( RandomGenerator, 0, 100 ) )
 					worldObj = Foods[RandomGenerator.Next( 0, Foods.Length )];
 				break;
 			case 3:
-				if ( RandomGenerator.Next( 1, 100 ) <= ObstacleProbability )
+				if ( ObstacleProbability > MathFunctions.RandomDouble( RandomGenerator, 0, 100 ) )
 					worldObj = Obstacles[RandomGenerator.Next( 0, Obstacles.Length )];
 				break;
 		}
