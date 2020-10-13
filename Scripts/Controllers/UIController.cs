@@ -20,7 +20,7 @@ public class UIController : MonoBehaviour
 
 	protected void Update()
 	{
-		FpsText.text = $"{( 1f / Time.deltaTime ).ToString( "f2" )} FPS";
+		FpsText.text = $"{( 1f / Time.smoothDeltaTime ).ToString( "f0" )} FPS";
 	}
 
 	public void SetStatus( string status )

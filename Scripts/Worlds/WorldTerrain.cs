@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent( typeof( GenericWorld ) )]
+[RequireComponent( typeof( World ) )]
 public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 {
 	#region Attributes
@@ -14,7 +14,7 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 
 	#region Function attributes
 
-	protected GenericWorld World;
+	protected World World;
 
 	#endregion
 
@@ -25,7 +25,7 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 	public override void Generate()
 	{
 		if ( World == null )
-			World = GetComponent<GenericWorld>();
+			World = GetComponent<World>();
 
 		Player = FindObjectOfType<LC_FirstPersonController>().transform;
 

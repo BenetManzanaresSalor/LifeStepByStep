@@ -2,21 +2,21 @@
 
 public class LookAt : MonoBehaviour
 {
-	[SerializeField] private bool AtCamera = true;
-	[SerializeField] private Transform AlternativeTarget;
+	[SerializeField] protected bool AtCamera = true;
+	[SerializeField] protected Transform Target;
 
-	void Start()
+	protected virtual void Start()
 	{
 		if ( AtCamera )
-			AlternativeTarget = FindObjectOfType<Camera>().transform;
+			Target = Camera.main.transform;
 
-		if ( AlternativeTarget == null )
+		if ( Target == null )
 			Debug.LogError( $"LookAt {name} has null target" );
 	}
 
-	void Update()
+	protected virtual void Update()
 	{
-		if ( AlternativeTarget != null )
-			transform.LookAt( AlternativeTarget );
+		if ( Target != null )
+			transform.rotation = Quaternion.LookRotation( transform.position - Target.position );
 	}
 }

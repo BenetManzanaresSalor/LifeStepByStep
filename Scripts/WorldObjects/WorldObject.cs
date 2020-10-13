@@ -14,7 +14,7 @@ public class WorldObject : MonoBehaviour
 
 	#region Function attributes
 
-	protected GenericWorld CurrentWorld;
+	protected World CurrentWorld;
 	protected WorldTerrain CurrentTerrain { get => CurrentWorld.Terrain; }
 	public WorldCell CurrentCell
 	{
@@ -41,7 +41,7 @@ public class WorldObject : MonoBehaviour
 
 	#region Initialization
 
-	public virtual void SetWorld( GenericWorld world )
+	public virtual void SetWorld( World world )
 	{
 		CurrentWorld = world;
 	}

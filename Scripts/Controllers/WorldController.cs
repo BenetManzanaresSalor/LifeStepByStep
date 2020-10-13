@@ -12,7 +12,7 @@ public class WorldController : MonoBehaviour
 
 	#endregion
 
-	public GenericWorld CurrentWorld { get; protected set; }
+	public World CurrentWorld { get; protected set; }
 	public LC_FirstPersonController Player { get; protected set; }
 	public UIController UI { get; protected set; }
 
@@ -22,7 +22,7 @@ public class WorldController : MonoBehaviour
 
 	protected void Start()
 	{
-		CurrentWorld = FindObjectOfType<GenericWorld>();
+		CurrentWorld = FindObjectOfType<World>();
 		Player = FindObjectOfType<LC_FirstPersonController>();
 		UI = FindObjectOfType<UIController>();
 

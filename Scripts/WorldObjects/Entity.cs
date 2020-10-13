@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public struct EntityAction
 {
@@ -14,8 +15,7 @@ public struct EntityAction
 	}
 }
 
-[RequireComponent( typeof( MeshFilter ) )]
-public abstract class Entity : WorldObject
+public class Entity : WorldObject
 {
 	#region Constants
 
@@ -30,21 +30,48 @@ public abstract class Entity : WorldObject
 
 	#region Settings
 
-	[Header( "Entity settings" )]
-	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float Move1msCost = 1;
+	[Header( "Energy" )]
+	[SerializeField] [Range( MinEnergyValue, MaxEnergyValue )] protected float ProblematicEnergyPercentage = 25;
+
+	[Header( "Movement" )]
+	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float Move1msCost = 1;
 	[SerializeField] protected Vector2 MinAndMaxMoveSeconds = new Vector2( 0.75f, 1.25f );
 	[SerializeField] protected float FastMoveDivisor = 1.5f;
+	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float RandomMoveCost = NullEnergyCost;
+	[SerializeField] [Range( 0, 100 )] protected int ConserveDirectionProbability = 50;
+
+	[Header( "Search and target" )]
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float SearchCost = NotActionCost;
 	[SerializeField] protected uint SearchRadius = 5;
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float PathToTargetCost = NullEnergyCost;
-	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float RandomMoveCost = NullEnergyCost;
-	[SerializeField] [Range( 0, 100 )] protected int ConserveDirectionProbability = 50;
+	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float EatingCost = 0;
+
+	[Header( "Growing and reproduction" )]
+	[SerializeField] protected float AdultScale = 2f;
+	[SerializeField] protected Vector2 MinAndMaxSecondsToGrow = new Vector2( 20f, 40f );
+	[SerializeField] protected Vector2 MinAndMaxReproductionCooldown = new Vector2( 30f, 60f );
+	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float ReproductionCost = 25;
+
+	[Header( "Information render" )]
+	[SerializeField] protected Image FemenineImage;
+	[SerializeField] protected Image MasculineImage;
+	[SerializeField] protected Image EnergyBar;
+	[SerializeField] protected Color GoodEnergyColor = Color.green;
+	[SerializeField] protected Color ProblematicEnergyColor = Color.red;
+	[SerializeField] protected Image SearchingImage;
+	[SerializeField] protected Image HasTargetImage;
+	[SerializeField] protected Image HasToEatImage;
+	[SerializeField] protected Image HasToReproduceImage;
+	[SerializeField] protected LineRenderer TargetLineRenderer;
+	[SerializeField] protected ParticleSystem ReproductionParticles;
+	[SerializeField] protected ParticleSystem DeathParticles;
 
 	#endregion
 
 	#region Function attributes
 
 	public bool IsAlive { get; protected set; }
+	protected float SecondsAlive = 0;
 	protected float Energy;
 	protected float MovementProgress;
 	protected float NormalMoveSeconds;
@@ -70,6 +97,15 @@ public abstract class Entity : WorldObject
 	protected WorldObject Target;
 	public bool HasTarget { get { return Target != null; } }
 
+	protected bool HasProblematicEnergy { get { return Energy < ProblematicEnergyPercentage; } }
+	protected float SecondsToGrow;
+	protected bool IsAdult = false;
+	protected bool IsFemale;
+	protected float ReproductionCooldown;
+	protected float LastReproductionTime;
+	protected bool HasToReproduce { get { return IsAdult && !HasProblematicEnergy && ( SecondsAlive - LastReproductionTime ) >= ReproductionCooldown; } }
+	protected bool IsPregnant = false;
+
 	protected System.Random RandomGenerator;
 
 	#endregion
@@ -80,13 +116,24 @@ public abstract class Entity : WorldObject
 
 	protected virtual void Start()
 	{
+		RandomGenerator = CurrentWorld.RandomGenerator;
+
 		IsAlive = true;
 		SetEnergy( MaxEnergyValue );
+
 		Direction = Vector2Int.zero;
-		RandomGenerator = new System.Random( WorldPosition2D.GetHashCode() );
 		NormalMoveSeconds = MinAndMaxMoveSeconds.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxMoveSeconds.y - MinAndMaxMoveSeconds.x );
 		FastMoveSeconds = NormalMoveSeconds / FastMoveDivisor;
 		MovementProgress = 0;
+
+		IsFemale = RandomGenerator.NextDouble() >= 0.5f;
+		if ( IsFemale )
+			FemenineImage.enabled = true;
+		else
+			MasculineImage.enabled = true;
+
+		SecondsToGrow = MinAndMaxSecondsToGrow.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxSecondsToGrow.y - MinAndMaxSecondsToGrow.x );
+		ReproductionCooldown = MinAndMaxReproductionCooldown.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxReproductionCooldown.y - MinAndMaxReproductionCooldown.x );
 
 		ActionsList = CreateActionsList();
 	}
@@ -95,8 +142,9 @@ public abstract class Entity : WorldObject
 	{
 		return new List<EntityAction>() {
 			new EntityAction( HasToMove, MoveAction ),
-			new EntityAction( IsTouchingTarget, TouchingTargetAction ),
+			new EntityAction( HasToInteractWithTarget, InteractWithTargetAction ),
 			new EntityAction( HasToSearch, SearchAndPathToTargetAction ),
+			new EntityAction( HasToGrow, GrowAction ),
 			new EntityAction( () => { return true; }, RandomMovementAction ),
 		};
 	}
@@ -108,11 +156,42 @@ public abstract class Entity : WorldObject
 	public virtual bool Step()
 	{
 		if ( IsAlive )
+		{
+			SecondsAlive += Time.deltaTime;
 			IncrementEnergy( -DoAction() );
-		else
+			UpdateStateRenderer();
+		}
+
+		if ( !IsAlive )
 			Destroy();
 
 		return IsAlive;
+	}
+
+	protected virtual void UpdateStateRenderer()
+	{
+		bool hasTarget = HasTarget;
+		bool isSearching = !hasTarget && HasToSearch();
+
+		SearchingImage.enabled = isSearching;
+
+		HasToEatImage.enabled = HasProblematicEnergy;
+
+		HasToReproduceImage.enabled = HasToReproduce;
+
+		HasTargetImage.enabled = hasTarget;
+
+		if ( hasTarget )
+		{
+			if ( CurrentWorld.TargetRays )
+			{
+				TargetLineRenderer.enabled = true;
+				TargetLineRenderer.SetPosition( 0, transform.position );
+				TargetLineRenderer.SetPosition( 1, Target.transform.position );
+			}
+		}
+		else
+			TargetLineRenderer.enabled = false;
 	}
 
 	#endregion
@@ -138,6 +217,24 @@ public abstract class Entity : WorldObject
 		cost = Mathf.Max( NullEnergyCost, cost );
 		return cost;
 	}
+
+	#region Grow
+
+	protected virtual bool HasToGrow()
+	{
+		return !IsAdult && !HasProblematicEnergy && SecondsAlive >= SecondsToGrow;
+	}
+
+	protected virtual float GrowAction()
+	{
+		transform.localScale *= AdultScale;
+		IsAdult = true;
+		LastReproductionTime = SecondsAlive;
+
+		return NotActionCost;
+	}
+
+	#endregion
 
 	#region Move
 
@@ -186,18 +283,78 @@ public abstract class Entity : WorldObject
 
 	#region Touching target
 
-	protected virtual bool IsTouchingTarget()
+	protected virtual bool HasToInteractWithTarget()
 	{
-		return Target != null && MathFunctions.IsTouchingObjective( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible );
+		bool hasToInteract = false;
+
+		if ( HasTarget )
+		{
+			if ( Target is Food )
+				hasToInteract = Energy < MaxEnergyValue;
+			else if ( Target is Entity )
+				hasToInteract = HasToReproduce;
+		}
+
+		return hasToInteract && MathFunctions.IsTouchingObjective( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible );
 	}
 
-	protected abstract float TouchingTargetAction();
+	protected virtual float InteractWithTargetAction()
+	{
+		float cost = NotActionCost;
+
+		if ( Target is Food )
+			cost = Eat();
+		else if ( Target is Entity && IsFemale )
+			cost = Reproduce();
+
+		return cost;
+	}
+
+	protected virtual float Eat()
+	{
+		Food foodTarget = Target as Food;
+
+		if ( Energy < MaxEnergyValue )
+			IncrementEnergy( foodTarget.GetEnergy() );
+
+		if ( Energy == MaxEnergyValue )
+			Target = null;
+
+		return EatingCost;
+	}
+
+	protected virtual float Reproduce()
+	{
+		Entity entityTarget = Target as Entity;
+
+		if ( IsFemale )
+		{
+			IsPregnant = true;
+			entityTarget.IncrementEnergy( -entityTarget.Reproduce() );
+		}
+
+		ParticleSystem particles = Instantiate( ReproductionParticles, this.transform.position, Quaternion.identity );
+		Destroy( particles.gameObject, particles.main.duration );
+
+		LastReproductionTime = SecondsAlive;
+		Target = null;
+
+		return ReproductionCost;
+	}
 
 	#endregion
 
 	#region Search and move to target
 
-	protected abstract bool HasToSearch();
+	protected virtual bool HasToSearch()
+	{
+		bool hasToSearch = HasProblematicEnergy || HasToReproduce;
+
+		if ( !hasToSearch )
+			Target = null;
+
+		return hasToSearch;
+	}
 
 	protected virtual float SearchAndPathToTargetAction()
 	{
@@ -235,7 +392,21 @@ public abstract class Entity : WorldObject
 		return cost;
 	}
 
-	protected abstract bool IsInterestingObject( WorldObject obj );
+	protected virtual bool IsInterestingObject( WorldObject obj )
+	{
+		bool isInteresting = false;
+
+		if ( HasProblematicEnergy )
+			isInteresting = obj is Food;
+		else if ( HasToReproduce )
+		{
+			Entity entityTarget = obj as Entity;
+			if ( entityTarget != null )
+				isInteresting = entityTarget.IsFemale != IsFemale && entityTarget.HasToReproduce;
+		}
+
+		return isInteresting;
+	}
 
 	protected virtual WorldObject TargetAtInterestingObjects( WorldObject closestInterestingObj, List<WorldObject> interestingObjs )
 	{
@@ -294,8 +465,13 @@ public abstract class Entity : WorldObject
 	protected virtual void SetEnergy( float value )
 	{
 		Energy = Mathf.Clamp( value, MinEnergyValue, MaxEnergyValue );
-		if ( Energy <= MinEnergyValue )
-			Destroy();
+		if ( Energy > MinEnergyValue )
+		{
+			EnergyBar.fillAmount = Mathf.InverseLerp( MinEnergyValue, MaxEnergyValue, Energy );
+			EnergyBar.color = HasProblematicEnergy ? ProblematicEnergyColor : GoodEnergyColor;
+		}
+		else
+			IsAlive = false;
 	}
 
 	protected virtual void IncrementEnergy( float amount )
@@ -306,7 +482,12 @@ public abstract class Entity : WorldObject
 	public override void Destroy()
 	{
 		IsAlive = false;
+
+		ParticleSystem particles = Instantiate( DeathParticles, this.transform.position, Quaternion.identity );
+		Destroy( particles.gameObject, particles.main.duration );
+
 		CurrentWorld.DestroyedEntity( this );
+
 		base.Destroy();
 	}
 
