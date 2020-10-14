@@ -485,7 +485,7 @@ public static class LC_Math
 	public static Vector2Int Div( this Vector2Int a, Vector2Int b )
 	{
 		return new Vector2Int( a.x / b.x, a.y / b.y );
-	}
+	}	
 
 	#endregion
 }

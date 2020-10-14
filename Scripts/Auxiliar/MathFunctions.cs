@@ -370,16 +370,14 @@ public static class MathFunctions
 
 		// For all directions, while a acces to the target isn't found
 		for ( int i = 0; i < EightDirections2D.Count && !isAccessible; i++ )
-		{
 			isAccessible = isPositionAccessible( objective + EightDirections2D[i] );
-		}
 
 		return isAccessible;
 	}
 
 	/// <summary>
-	/// <para>Checks if a movement from a origin to a specific direction ( in some of the eight possible directions ) is possible.</para>
-	/// <para>To check it the method observe the adjacents possitions, avoiding a movement that go throught a inaccesible position.</para>
+	/// <para>Checks if a movement from a origin with a specific direction ( in some of the eight possible directions ) is possible.</para>
+	/// <para>To check it the method observe the adjacents positions, avoiding a movement that go throught a inaccesible position.</para>
 	/// </summary>
 	/// <param name="origin">Original position.</param>
 	/// <param name="direction">Direction of the movement.</param>
@@ -401,6 +399,37 @@ public static class MathFunctions
 				possible &= isPositionAccessible( movementComponents[i] );
 
 		return possible;
+	}
+
+	/// <summary>
+	/// Checks if the objective is accesible from the origin position in a single movement.
+	/// </summary>
+	/// <param name="origin">Original position.</param>
+	/// <param name="objective">Objective position.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <returns>If the objective is accesible from the origin position in a single movement.</returns>
+	public static bool IsTouchingObjective( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible )
+	{
+		bool isTouching = false;
+
+		if ( origin.Equals( objective ) )
+			isTouching = true;
+		else
+		{
+			Vector2Int direction = objective - origin;
+
+			if ( Mathf.Abs( direction.x ) <= 1 && Mathf.Abs( direction.y ) <= 1 )
+			{
+				isTouching = true;
+
+				// If is a diagonal
+				if ( direction.x != 0 && direction.y != 0 )
+					isTouching = isPositionAccessible( origin + Vector2Int.right * direction.x ) &&
+						isPositionAccessible( origin + Vector2Int.up * direction.y );
+			}
+		}
+
+		return isTouching;
 	}
 
 	/// <summary>
@@ -428,78 +457,6 @@ public static class MathFunctions
 		}
 
 		return positions;
-	}
-
-	/// <summary>
-	/// Checks if the objective is accesible from the origin position in a single movement.
-	/// </summary>
-	/// <param name="origin">Original position.</param>
-	/// <param name="objective">Objective position.</param>
-	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
-	/// <returns>If the objective is accesible from the origin position in a single movement.</returns>
-	public static bool IsTouchingObjective( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible )
-	{
-		bool isTouching = false;
-
-		if ( origin.Equals( objective ) )
-		{
-			isTouching = true;
-		}
-		else
-		{
-			Vector2Int direction = DirToObjectiveInRadius( origin, objective, 1 );
-
-			if ( direction != Vector2Int.zero )
-			{
-				isTouching = true;
-
-				// If is a diagonal
-				if ( direction.x != 0 && direction.y != 0 )
-				{
-					Vector2Int[] movementComponents = { origin + Vector2Int.right * direction.x, origin + Vector2Int.up * direction.y };
-
-					for ( int i = 0; i < movementComponents.Length && isTouching; i++ )
-					{
-						isTouching &= isPositionAccessible( movementComponents[i] );
-					}
-				}
-			}
-		}
-
-		return isTouching;
-	}
-
-	/// <summary>
-	/// <para>Obtains the direction form origin to objective only if the objective is in the square radius.</para>
-	/// <para>If the objective is not found, returns the direction (0,0).</para>
-	/// </summary>
-	/// <param name="origin">Original position and center of the square area.</param>
-	/// <param name="objective">Objective position.</param>
-	/// <param name="squareRadius">Radius of the square area.</param>
-	/// <returns>The direction to the objective if it is in the square area. Otherwise, the direction (0,0) is returned.</returns>
-	private static Vector2Int DirToObjectiveInRadius( Vector2Int origin, Vector2Int objective, uint squareRadius )
-	{
-		Vector2Int dirToObjective = Vector2Int.zero;
-		bool positionFound = false;
-		Vector2Int areaTopLeftCorner = origin + Vector2Int.one * -1 * (int)squareRadius;
-
-		Vector2Int pos;
-		Vector2Int offset;
-		for ( int x = 0; x <= squareRadius * 2 && !positionFound; x++ )
-		{
-			for ( int y = 0; y <= squareRadius * 2 && !positionFound; y++ )
-			{
-				offset = new Vector2Int( x, y );
-				pos = areaTopLeftCorner + offset;
-				if ( pos == objective )
-				{
-					dirToObjective = pos - origin;
-					positionFound = false;
-				}
-			}
-		}
-
-		return dirToObjective;
 	}
 
 	#endregion
@@ -604,6 +561,11 @@ public static class MathFunctions
 		vector.y = Mathf.Clamp( vector.y, -1, 1 );
 
 		return vector;
+	}
+
+	public static Vector3 Div( this Vector3 a, Vector3 b )
+	{
+		return new Vector3( a.x / b.x, a.y / b.y, a.z / b.z );
 	}
 
 	#endregion

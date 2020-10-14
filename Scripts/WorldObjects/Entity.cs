@@ -31,12 +31,12 @@ public class Entity : WorldObject
 	#region Settings
 
 	[Header( "Energy" )]
-	[SerializeField] [Range( MinEnergyValue, MaxEnergyValue )] protected float ProblematicEnergyPercentage = 25;
+	[SerializeField] [Range( MinEnergyValue, MaxEnergyValue )] protected float ProblematicEnergyPercentage = 50;
 
 	[Header( "Movement" )]
-	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float Move1msCost = 1;
+	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float Move1msCost = 2;
 	[SerializeField] protected Vector2 MinAndMaxMoveSeconds = new Vector2( 0.75f, 1.25f );
-	[SerializeField] protected float FastMoveDivisor = 1.5f;
+	[SerializeField] protected Vector2 MinAndMaxFastMoveDivisor = new Vector2( 1f, 3f );
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float RandomMoveCost = NullEnergyCost;
 	[SerializeField] [Range( 0, 100 )] protected int ConserveDirectionProbability = 50;
 
@@ -47,10 +47,12 @@ public class Entity : WorldObject
 	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float EatingCost = 0;
 
 	[Header( "Growing and reproduction" )]
-	[SerializeField] protected float AdultScale = 2f;
 	[SerializeField] protected Vector2 MinAndMaxSecondsToGrow = new Vector2( 20f, 40f );
+	[SerializeField] protected Vector3 ChildScale = Vector3.one * 0.6f;
+	[SerializeField] protected Vector3 AdultScale = Vector3.one;
 	[SerializeField] protected Vector2 MinAndMaxReproductionCooldown = new Vector2( 30f, 60f );
-	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float ReproductionCost = 25;
+	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float ReproductionCost = 10;
+	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float GiveBirthCost = 25;
 
 	[Header( "Information render" )]
 	[SerializeField] protected Image FemenineImage;
@@ -75,6 +77,7 @@ public class Entity : WorldObject
 	protected float Energy;
 	protected float MovementProgress;
 	protected float NormalMoveSeconds;
+	protected float FastMoveDivisor;
 	protected float FastMoveSeconds;
 	protected Vector3 OriginPosition;
 	protected Vector3 DestinyPosition { get { return CurrentPositionToReal(); } }
@@ -101,10 +104,14 @@ public class Entity : WorldObject
 	protected float SecondsToGrow;
 	protected bool IsAdult = false;
 	protected bool IsFemale;
+
 	protected float ReproductionCooldown;
 	protected float LastReproductionTime;
-	protected bool HasToReproduce { get { return IsAdult && !HasProblematicEnergy && ( SecondsAlive - LastReproductionTime ) >= ReproductionCooldown; } }
+	protected bool HasToReproduce { get { return IsAdult && !IsPregnant && !HasProblematicEnergy && ( SecondsAlive - LastReproductionTime ) >= ReproductionCooldown; } }
 	protected bool IsPregnant = false;
+	protected WorldCell PreviousCell;
+	protected float ChildNormalMoveSeconds;
+	protected float ChildFastMoveDivisor;
 
 	protected System.Random RandomGenerator;
 
@@ -114,23 +121,27 @@ public class Entity : WorldObject
 
 	#region Initialization
 
-	protected virtual void Start()
+	public override void Initialize( World world, WorldCell cell )
 	{
-		RandomGenerator = CurrentWorld.RandomGenerator;
+		base.Initialize( world, cell );
 
 		IsAlive = true;
 		SetEnergy( MaxEnergyValue );
 
+		RandomGenerator = CurrentWorld.RandomGenerator;
+
 		Direction = Vector2Int.zero;
 		NormalMoveSeconds = MinAndMaxMoveSeconds.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxMoveSeconds.y - MinAndMaxMoveSeconds.x );
+		FastMoveDivisor = MinAndMaxFastMoveDivisor.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxFastMoveDivisor.y - MinAndMaxFastMoveDivisor.x );
 		FastMoveSeconds = NormalMoveSeconds / FastMoveDivisor;
 		MovementProgress = 0;
 
 		IsFemale = RandomGenerator.NextDouble() >= 0.5f;
-		if ( IsFemale )
-			FemenineImage.enabled = true;
-		else
-			MasculineImage.enabled = true;
+		FemenineImage.enabled = IsFemale;
+		MasculineImage.enabled = !IsFemale;
+
+		transform.localScale = ChildScale.Div( transform.parent.lossyScale );
+		transform.position = CurrentPositionToReal();
 
 		SecondsToGrow = MinAndMaxSecondsToGrow.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxSecondsToGrow.y - MinAndMaxSecondsToGrow.x );
 		ReproductionCooldown = MinAndMaxReproductionCooldown.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxReproductionCooldown.y - MinAndMaxReproductionCooldown.x );
@@ -138,15 +149,13 @@ public class Entity : WorldObject
 		ActionsList = CreateActionsList();
 	}
 
-	protected virtual List<EntityAction> CreateActionsList()
+	public virtual void Initialize( World world, WorldCell cell, float normalMoveSeconds, float fastMoveDivisor )
 	{
-		return new List<EntityAction>() {
-			new EntityAction( HasToMove, MoveAction ),
-			new EntityAction( HasToInteractWithTarget, InteractWithTargetAction ),
-			new EntityAction( HasToSearch, SearchAndPathToTargetAction ),
-			new EntityAction( HasToGrow, GrowAction ),
-			new EntityAction( () => { return true; }, RandomMovementAction ),
-		};
+		Initialize( world, cell );
+
+		NormalMoveSeconds = normalMoveSeconds;
+		FastMoveDivisor = fastMoveDivisor;
+		FastMoveSeconds = NormalMoveSeconds / FastMoveDivisor;
 	}
 
 	#endregion
@@ -198,6 +207,18 @@ public class Entity : WorldObject
 
 	#region Actions
 
+	protected virtual List<EntityAction> CreateActionsList()
+	{
+		return new List<EntityAction>() {
+			new EntityAction( HasToMove, MoveAction ),
+			new EntityAction( HasToGiveBirth, GiveBirthAction ),
+			new EntityAction( HasToInteractWithTarget, InteractWithTargetAction ),
+			new EntityAction( HasToSearch, SearchAndPathToTargetAction ),
+			new EntityAction( HasToGrow, GrowAction ),
+			new EntityAction( () => { return true; }, RandomMovementAction ),
+		};
+	}
+
 	public virtual float DoAction()
 	{
 		float cost = NullEnergyCost;
@@ -218,31 +239,36 @@ public class Entity : WorldObject
 		return cost;
 	}
 
-	#region Grow
-
-	protected virtual bool HasToGrow()
+	protected override void CellChange( WorldCell newCell )
 	{
-		return !IsAdult && !HasProblematicEnergy && SecondsAlive >= SecondsToGrow;
+		PreviousCell = CurrentCell;
+		Direction = newCell.TerrainPos - WorldPosition2D;
+		OriginPosition = CurrentPositionToReal();
 	}
 
-	protected virtual float GrowAction()
+	#region Give birth
+
+	protected virtual bool HasToGiveBirth()
 	{
-		transform.localScale *= AdultScale;
-		IsAdult = true;
+		return IsPregnant && PreviousCell.IsFree();
+	}
+
+	protected virtual float GiveBirthAction()
+	{
+		IsPregnant = false;
 		LastReproductionTime = SecondsAlive;
 
-		return NotActionCost;
+		Entity child = Instantiate( this, transform.parent );
+		PreviousCell.TrySetContent( child );
+		child.Initialize( CurrentWorld, PreviousCell, ChildNormalMoveSeconds, ChildFastMoveDivisor );
+		CurrentWorld.NewEntity( child );
+
+		return GiveBirthCost;
 	}
 
 	#endregion
 
 	#region Move
-
-	protected override void CellChange( WorldCell newCell )
-	{
-		Direction = newCell.TerrainPos - WorldPosition2D;
-		OriginPosition = CurrentPositionToReal();
-	}
 
 	protected virtual bool HasToMove()
 	{
@@ -329,15 +355,21 @@ public class Entity : WorldObject
 
 		if ( IsFemale )
 		{
-			IsPregnant = true;
 			entityTarget.IncrementEnergy( -entityTarget.Reproduce() );
+
+			// TODO : Add mutations
+			ChildNormalMoveSeconds = ( NormalMoveSeconds + entityTarget.NormalMoveSeconds ) / 2;
+			ChildFastMoveDivisor = ( FastMoveDivisor + entityTarget.FastMoveDivisor ) / 2;
+
+			IsPregnant = true;
 		}
+		else
+			LastReproductionTime = SecondsAlive;
+
+		Target = null;
 
 		ParticleSystem particles = Instantiate( ReproductionParticles, this.transform.position, Quaternion.identity );
 		Destroy( particles.gameObject, particles.main.duration );
-
-		LastReproductionTime = SecondsAlive;
-		Target = null;
 
 		return ReproductionCost;
 	}
@@ -436,6 +468,25 @@ public class Entity : WorldObject
 		}
 
 		return cost;
+	}
+
+	#endregion
+
+	#region Grow
+
+	protected virtual bool HasToGrow()
+	{
+		return !IsAdult && !HasProblematicEnergy && SecondsAlive >= SecondsToGrow;
+	}
+
+	protected virtual float GrowAction()
+	{
+		transform.localScale = AdultScale;
+		transform.position = CurrentPositionToReal();
+		IsAdult = true;
+		LastReproductionTime = SecondsAlive;
+
+		return NotActionCost;
 	}
 
 	#endregion

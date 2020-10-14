@@ -91,17 +91,7 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 				WorldCell cell = chunk.Cells[x, y];
 
 				if ( cell.IsFree() )
-				{
-					WorldObject worldObj = World.GetWorldObject( cell );
-					if ( worldObj != null )
-					{
-						worldObj = Instantiate( worldObj, chunk.Obj.transform );
-						cell.TrySetContent( worldObj );
-						worldObj.SetWorld( World );
-						worldObj.CurrentCell = cell;
-						World.WorldObjectInstanciated( worldObj );
-					}
-				}
+					World.CreateWorldObject( chunk, cell );
 			}
 	}
 

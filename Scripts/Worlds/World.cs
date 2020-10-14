@@ -67,7 +67,7 @@ public class World : MonoBehaviour
 		return new WorldCell( new Vector2Int( chunk.CellsOffset.x + chunkX, chunk.CellsOffset.y + chunkZ ), renderHeight, realHeight, isWater );
 	}
 
-	public virtual WorldObject GetWorldObject( WorldCell cell )
+	public virtual void CreateWorldObject( LC_Chunk<WorldCell> chunk, WorldCell cell )
 	{
 		WorldObject worldObj = null;
 
@@ -88,14 +88,16 @@ public class World : MonoBehaviour
 				break;
 		}
 
-		return worldObj;
-	}
+		if ( worldObj != null )
+		{
+			worldObj = Instantiate( worldObj, chunk.Obj.transform );
+			cell.TrySetContent( worldObj );
+			worldObj.Initialize( this, cell );
 
-	public virtual void WorldObjectInstanciated( WorldObject obj )
-	{
-		Entity entity = obj as Entity;
-		if ( entity != null )
-			EntitiesList.Add( entity );
+			Entity entity = worldObj as Entity;
+			if ( entity != null )
+				NewEntity( entity );
+		}
 	}
 
 	#endregion
@@ -153,6 +155,11 @@ public class World : MonoBehaviour
 	public void ToggleAutomaticSteping()
 	{
 		AutomaticSteping = !AutomaticSteping;
+	}
+
+	public void NewEntity( Entity entity )
+	{
+		EntitiesList.Add( entity );
 	}
 
 	public void DestroyedEntity( Entity entity )

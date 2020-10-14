@@ -588,7 +588,7 @@ Transform:
   m_GameObject: {fileID: 5221297354027885548}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 363179935}
   m_Father: {fileID: 0}
@@ -608,20 +608,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   VerticalOffset: 0
   RotationOffset: 0
-  ProblematicEnergyPercentage: 70
-  Move1msCost: 1
+  ProblematicEnergyPercentage: 50
+  Move1msCost: 2
   MinAndMaxMoveSeconds: {x: 1, y: 1.75}
-  FastMoveDivisor: 1.5
+  MinAndMaxFastMoveDivisor: {x: 1, y: 3}
   RandomMoveCost: 0
   ConserveDirectionProbability: 50
   SearchCost: -1
   SearchRadius: 30
   PathToTargetCost: 0
   EatingCost: 0
-  AdultScale: 2
   MinAndMaxSecondsToGrow: {x: 10, y: 20}
-  MinAndMaxReproductionCooldown: {x: 10, y: 20}
-  ReproductionCost: 20
+  ChildScale: {x: 0.6, y: 0.6, z: 0.6}
+  AdultScale: {x: 1, y: 1, z: 1}
+  MinAndMaxReproductionCooldown: {x: 30, y: 60}
+  ReproductionCost: 15
+  GiveBirthCost: 25
   FemenineImage: {fileID: 2491753066971207437}
   MasculineImage: {fileID: 3759450473131212748}
   EnergyBar: {fileID: 1208381630}

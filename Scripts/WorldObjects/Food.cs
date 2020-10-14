@@ -8,38 +8,17 @@ public class Food : WorldObject
 
 	[Header( "Food settings" )]
 	[SerializeField] protected float BaseEnergy = 100;
-	[SerializeField] protected float actionsToEat = 10;
+	[SerializeField] public float SecondsToEat = 10;
 	[SerializeField] [Range( 0, 100 )] protected float RegenerationPercentagePerSecond = 10;
+	[SerializeField] protected bool DestroyWhenEmpty = true;
 
 	#endregion
 
 	#region Function attributes
 
-	public float Energy
-	{
-		get
-		{
-			return energy;
-		}
-		protected set
-		{
-			energy = Mathf.Clamp( value, 0, BaseEnergy );
-
-			if ( energy == 0 )
-			{
-				Destroy();
-			}
-			else
-			{
-				AdaptScale();
-				HasToRegenerate = energy < BaseEnergy;
-			}
-		}
-	}
-	protected float energy;
+	protected float Energy;
 	protected Vector3 InitialLocalScale;
-	public float ActionsToEat { get { return actionsToEat; } }	
-	protected bool HasToRegenerate;
+	protected bool HasToRegenerate { get { return Energy < BaseEnergy; } }
 	protected float RegenerationMultiplier { get { return RegenerationPercentagePerSecond / 100; } }
 
 	#endregion
@@ -60,9 +39,15 @@ public class Food : WorldObject
 
 	public float GetEnergy()
 	{
-		float obtainedNutrients = BaseEnergy / ActionsToEat;
+		float obtainedNutrients = BaseEnergy * Time.deltaTime / SecondsToEat;
+		obtainedNutrients = Mathf.Min( obtainedNutrients, Energy );
 
-		Energy -= obtainedNutrients;
+		Energy = Mathf.Clamp( Energy - obtainedNutrients, 0, BaseEnergy );
+
+		if ( Energy == 0 && DestroyWhenEmpty )
+			Destroy();
+		else
+			AdaptScale();
 
 		return obtainedNutrients;
 	}
@@ -73,7 +58,7 @@ public class Food : WorldObject
 
 		transform.localScale = InitialLocalScale * inverseLerp;
 
-		// Force repositioning to touch the base
+		// Force repositioning to touch floor
 		CellChange( CurrentCell );
 	}
 
@@ -84,7 +69,10 @@ public class Food : WorldObject
 	protected virtual void Update()
 	{
 		if ( CurrentWorld.AutomaticSteping && HasToRegenerate )
+		{
 			Regenerate();
+			AdaptScale();
+		}
 	}
 
 	protected virtual void Regenerate()

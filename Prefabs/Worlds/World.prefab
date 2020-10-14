@@ -53,7 +53,7 @@ MonoBehaviour:
   MaxUpdateTime: 0.008333334
   UseRandomSeed: 1
   Seed: 0
-  EntityProbability: 4
+  EntityProbability: 3
   FoodProbability: 3
   ObstacleProbability: 5
 --- !u!114 &1823622170363514128
@@ -92,4 +92,4 @@ MonoBehaviour:
   - {r: 0.5568628, g: 0.5803922, b: 0.2901961, a: 1}
   - {r: 0.3019608, g: 0.34901962, b: 0.16470589, a: 1}
   UseSplitAndMerge: 1
-  WaterHeight: 10
+  WaterHeight: 20

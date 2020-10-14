@@ -92,12 +92,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe1358349786ca840b00eb6eb449d614, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  identificator: 102
   VerticalOffset: 0
   RotationOffset: 0
   BaseEnergy: 300
-  actionsToEat: 100
+  ActionsToEat: 25
   RegenerationPercentagePerSecond: 5
+  DestroyWhenEmpty: 1
 --- !u!114 &2270702205585900818
 MonoBehaviour:
   m_ObjectHideFlags: 0

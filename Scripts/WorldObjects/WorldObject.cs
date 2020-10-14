@@ -41,9 +41,10 @@ public class WorldObject : MonoBehaviour
 
 	#region Initialization
 
-	public virtual void SetWorld( World world )
+	public virtual void Initialize( World world, WorldCell cell )
 	{
 		CurrentWorld = world;
+		CurrentCell = cell;
 	}
 
 	#endregion
