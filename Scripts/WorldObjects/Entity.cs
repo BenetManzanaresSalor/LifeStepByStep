@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public struct EntityAction
 {
@@ -54,16 +53,19 @@ public class Entity : WorldObject
 	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float ReproductionCost = 10;
 	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float GiveBirthCost = 25;
 
+	[Header( "Death" )]
+	[SerializeField] protected Vector2 MinAndMaxSecondsToLive = new Vector2( 60f, 120f );
+
 	[Header( "Information render" )]
-	[SerializeField] protected Image FemenineImage;
-	[SerializeField] protected Image MasculineImage;
-	[SerializeField] protected Image EnergyBar;
+	[SerializeField] protected SpriteRenderer FemenineImage;
+	[SerializeField] protected SpriteRenderer MasculineImage;
+	[SerializeField] protected SpriteRenderer EnergyBar;
 	[SerializeField] protected Color GoodEnergyColor = Color.green;
 	[SerializeField] protected Color ProblematicEnergyColor = Color.red;
-	[SerializeField] protected Image SearchingImage;
-	[SerializeField] protected Image HasTargetImage;
-	[SerializeField] protected Image HasToEatImage;
-	[SerializeField] protected Image HasToReproduceImage;
+	[SerializeField] protected SpriteRenderer SearchingImage;
+	[SerializeField] protected SpriteRenderer HasTargetImage;
+	[SerializeField] protected SpriteRenderer HasToEatImage;
+	[SerializeField] protected SpriteRenderer HasToReproduceImage;
 	[SerializeField] protected LineRenderer TargetLineRenderer;
 	[SerializeField] protected ParticleSystem ReproductionParticles;
 	[SerializeField] protected ParticleSystem DeathParticles;
@@ -100,6 +102,8 @@ public class Entity : WorldObject
 	protected WorldObject Target;
 	public bool HasTarget { get { return Target != null; } }
 
+	protected System.Random RandomGenerator;
+
 	protected bool HasProblematicEnergy { get { return Energy < ProblematicEnergyPercentage; } }
 	protected float SecondsToGrow;
 	protected bool IsAdult = false;
@@ -113,7 +117,7 @@ public class Entity : WorldObject
 	protected float ChildNormalMoveSeconds;
 	protected float ChildFastMoveDivisor;
 
-	protected System.Random RandomGenerator;
+	protected float SecondsToLive;
 
 	#endregion
 
@@ -146,6 +150,8 @@ public class Entity : WorldObject
 		SecondsToGrow = MinAndMaxSecondsToGrow.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxSecondsToGrow.y - MinAndMaxSecondsToGrow.x );
 		ReproductionCooldown = MinAndMaxReproductionCooldown.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxReproductionCooldown.y - MinAndMaxReproductionCooldown.x );
 
+		SecondsToLive = MinAndMaxSecondsToLive.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxSecondsToLive.y - MinAndMaxSecondsToLive.x );
+
 		ActionsList = CreateActionsList();
 	}
 
@@ -167,8 +173,14 @@ public class Entity : WorldObject
 		if ( IsAlive )
 		{
 			SecondsAlive += Time.deltaTime;
-			IncrementEnergy( -DoAction() );
-			UpdateStateRenderer();
+
+			if ( SecondsAlive > SecondsToLive )
+				IsAlive = false;
+			else
+			{
+				IncrementEnergy( -DoAction() );
+				UpdateStateRenderer();
+			}
 		}
 
 		if ( !IsAlive )
@@ -210,8 +222,8 @@ public class Entity : WorldObject
 	protected virtual List<EntityAction> CreateActionsList()
 	{
 		return new List<EntityAction>() {
-			new EntityAction( HasToMove, MoveAction ),
 			new EntityAction( HasToGiveBirth, GiveBirthAction ),
+			new EntityAction( HasToMove, MoveAction ),
 			new EntityAction( HasToInteractWithTarget, InteractWithTargetAction ),
 			new EntityAction( HasToSearch, SearchAndPathToTargetAction ),
 			new EntityAction( HasToGrow, GrowAction ),
@@ -250,7 +262,7 @@ public class Entity : WorldObject
 
 	protected virtual bool HasToGiveBirth()
 	{
-		return IsPregnant && PreviousCell.IsFree();
+		return IsPregnant && HasToMove() && PreviousCell.IsFree();
 	}
 
 	protected virtual float GiveBirthAction()
@@ -518,7 +530,8 @@ public class Entity : WorldObject
 		Energy = Mathf.Clamp( value, MinEnergyValue, MaxEnergyValue );
 		if ( Energy > MinEnergyValue )
 		{
-			EnergyBar.fillAmount = Mathf.InverseLerp( MinEnergyValue, MaxEnergyValue, Energy );
+			Vector3 energyBarLocalPos = EnergyBar.transform.localPosition;
+			EnergyBar.transform.localPosition = new Vector3( Mathf.InverseLerp( MinEnergyValue, MaxEnergyValue, Energy ) - 1, energyBarLocalPos.y, energyBarLocalPos.z );
 			EnergyBar.color = HasProblematicEnergy ? ProblematicEnergyColor : GoodEnergyColor;
 		}
 		else
@@ -536,8 +549,6 @@ public class Entity : WorldObject
 
 		ParticleSystem particles = Instantiate( DeathParticles, this.transform.position, Quaternion.identity );
 		Destroy( particles.gameObject, particles.main.duration );
-
-		CurrentWorld.DestroyedEntity( this );
 
 		base.Destroy();
 	}

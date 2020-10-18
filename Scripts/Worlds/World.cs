@@ -113,28 +113,35 @@ public class World : MonoBehaviour
 			float averageIterationTime = 0;
 
 			int i;
+			Entity entity;
 			bool isAlive;
 			for ( i = 0; i < EntitiesList.Count && InMaxUpdateTime( averageIterationTime ); i++ )
 			{
-				EntityIdx = ( EntityIdx + 1 ) % EntitiesList.Count;
-				isAlive = EntitiesList[EntityIdx].Step();
+				entity = EntitiesList[EntityIdx];
+				isAlive = entity.Step();
 				if ( !isAlive )
 				{
+					DestroyedEntity( entity );
 					EntitiesList.RemoveAt( EntityIdx );
-					EntityIdx = ( EntityIdx - 1 ) % EntitiesList.Count; // Adjust because of remove
+					EntityIdx--; // Adjust because of remove
 				}
+
+				EntityIdx = ( EntityIdx + 1 ) % EntitiesList.Count;
 
 				numIterations++;
 				averageIterationTime = ( Time.realtimeSinceStartup - UpdateIniTime ) / numIterations;
 			}
-
-
 		}
 	}
 
 	protected virtual bool InMaxUpdateTime( float averageIterationTime )
 	{
 		return ( Time.realtimeSinceStartup - UpdateIniTime + averageIterationTime ) <= MaxUpdateTime;
+	}
+
+	protected virtual void DestroyedEntity( Entity entity )
+	{
+		UnityEngine.Debug.Log( $"[DESTROYED] {entity}" );
 	}
 
 	#endregion
@@ -160,11 +167,6 @@ public class World : MonoBehaviour
 	public void NewEntity( Entity entity )
 	{
 		EntitiesList.Add( entity );
-	}
-
-	public void DestroyedEntity( Entity entity )
-	{
-		UnityEngine.Debug.Log( $"[DESTROYED] {entity}" );
 	}
 
 	public void DestroyAllEntities()
