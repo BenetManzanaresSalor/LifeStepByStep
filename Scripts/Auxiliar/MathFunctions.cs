@@ -432,33 +432,6 @@ public static class MathFunctions
 		return isTouching;
 	}
 
-	/// <summary>
-	/// Obtains the adjacent positions in a square radius, excluding the center.
-	/// </summary>
-	/// <param name="center">Center of the square area.</param>
-	/// <param name="squareRadius">Radius of the square area.</param>
-	/// <returns>List of the positions in the square area.</returns>
-	public static List<Vector2Int> AroundPositions( Vector2Int center, uint squareRadius )
-	{
-		List<Vector2Int> positions = new List<Vector2Int>();
-
-		Vector2Int areaTopLeftCorner = center + Vector2Int.one * -1 * (int)squareRadius;
-		Vector2Int position;
-		for ( int x = 0; x <= squareRadius * 2; x++ )
-		{
-			for ( int y = 0; y <= squareRadius * 2; y++ )
-			{
-				position = areaTopLeftCorner + new Vector2Int( x, y );
-				if ( position != center )
-				{
-					positions.Add( position );
-				}
-			}
-		}
-
-		return positions;
-	}
-
 	#endregion
 
 	#region Random generation

@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PlayerOffset: {x: 0, y: 10, z: 0}
+  TargetRays: 0
 --- !u!1001 &5584640436146288190
 PrefabInstance:
   m_ObjectHideFlags: 0

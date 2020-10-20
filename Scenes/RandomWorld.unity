@@ -289,6 +289,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: World
       objectReference: {fileID: 0}
+    - target: {fileID: 1823622170363514129, guid: 6c3087c83fe9d38418ffc7c55b218073,
+        type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4294967295
+      objectReference: {fileID: 0}
     - target: {fileID: 1823622170363514133, guid: 6c3087c83fe9d38418ffc7c55b218073,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -492,11 +497,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4215105100751685407, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
-        type: 3}
-      propertyPath: TargetRays
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 166e9b303ae67c6469f4dc378d6ef9eb, type: 3}

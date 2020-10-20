@@ -117,11 +117,12 @@ public class World : MonoBehaviour
 			bool isAlive;
 			for ( i = 0; i < EntitiesList.Count && InMaxUpdateTime( averageIterationTime ); i++ )
 			{
+				EntityIdx = EntityIdx % EntitiesList.Count;
 				entity = EntitiesList[EntityIdx];
 				isAlive = entity.Step();
 				if ( !isAlive )
 				{
-					DestroyedEntity( entity );
+					DestroyEntity( entity );
 					EntitiesList.RemoveAt( EntityIdx );
 					EntityIdx--; // Adjust because of remove
 				}
@@ -139,9 +140,10 @@ public class World : MonoBehaviour
 		return ( Time.realtimeSinceStartup - UpdateIniTime + averageIterationTime ) <= MaxUpdateTime;
 	}
 
-	protected virtual void DestroyedEntity( Entity entity )
+	protected virtual void DestroyEntity( Entity entity )
 	{
 		UnityEngine.Debug.Log( $"[DESTROYED] {entity}" );
+		entity.Destroy();
 	}
 
 	#endregion

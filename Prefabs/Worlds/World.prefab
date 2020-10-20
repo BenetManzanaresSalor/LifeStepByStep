@@ -72,7 +72,7 @@ MonoBehaviour:
   CellSize: {x: 2, y: 1, z: 2}
   ChunkSizeLevel: 4
   ChunkRenderDistance: 1
-  HasCollider: 0
+  HasCollider: 1
   DynamicChunkLoading: 0
   ParallelChunkLoading: 1
   RenderMaterial: {fileID: 2100000, guid: 51fbdf40bac75434884646ae45aab9ee, type: 2}
