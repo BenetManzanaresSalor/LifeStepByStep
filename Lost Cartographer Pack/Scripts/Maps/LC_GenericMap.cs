@@ -11,6 +11,9 @@ public abstract class LC_GenericMap<Terrain, Chunk, Cell> : MonoBehaviour where 
 
 	[Header( "General settings" )]
 	[SerializeField]
+	[Tooltip( "If the map is initializated in Start method." )]
+	protected bool AutoInitialize = true;
+	[SerializeField]
 	[Tooltip( "Object texture of the map computation." )]
 	protected RenderTexture TargetTexture;
 	[SerializeField]
@@ -56,15 +59,22 @@ public abstract class LC_GenericMap<Terrain, Chunk, Cell> : MonoBehaviour where 
 
 	#region Initialization
 
+	protected virtual void Start()
+	{
+		if ( AutoInitialize )
+			Initialize();
+	}
+
 	/// <summary>
 	/// Initializes the map variables and the texture.
 	/// </summary>
-	protected virtual void Start()
+	protected virtual void Initialize()
 	{
 		TerrainToMap = FindObjectOfType<Terrain>();
 		MapTexture = new Texture2D( TextureWidthAndHeight.x, TextureWidthAndHeight.y );
 		TextureColors = new Color32[MapTexture.width * MapTexture.height];
 		CurrentCellPosInTex = Vector2Int.zero;
+		ReferencePos = TerrainToMap.PlayerChunkPos * TerrainToMap.ChunkSize + Vector2Int.one * ( TerrainToMap.ChunkSize / 2 );
 	}
 
 	#endregion
@@ -80,7 +90,9 @@ public abstract class LC_GenericMap<Terrain, Chunk, Cell> : MonoBehaviour where 
 		{
 			UpdateIniTime = Time.realtimeSinceStartup;
 			HalfMapOffset = new Vector2Int( NumCellsWidthAndHeight.x / 2, NumCellsWidthAndHeight.y / 2 ); // Update HalfMapOffset for map generation
-			ReferencePos = GetReferencePos();
+
+			if ( TerrainToMap.DynamicChunkLoading || MapNonLoadedChunks )
+				ReferencePos = GetReferencePos();
 
 			if ( MapNonLoadedChunks && InMaxUpdateTime() )
 				UpdateTerrainToMapChunks();

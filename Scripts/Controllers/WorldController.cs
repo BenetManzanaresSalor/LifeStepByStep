@@ -12,9 +12,13 @@ public class WorldController : MonoBehaviour
 
 	#endregion
 
+	#region Function
+
 	public World CurrentWorld { get; protected set; }
-	public LC_FirstPersonController Player { get; protected set; }
+	public FirstPersonController Player { get; protected set; }
 	public UIController UI { get; protected set; }
+
+	#endregion
 
 	#endregion
 
@@ -23,7 +27,7 @@ public class WorldController : MonoBehaviour
 	protected void Start()
 	{
 		CurrentWorld = FindObjectOfType<World>();
-		Player = FindObjectOfType<LC_FirstPersonController>();
+		Player = FindObjectOfType<FirstPersonController>();
 		UI = FindObjectOfType<UIController>();
 
 		RestartWorld();
@@ -60,7 +64,7 @@ public class WorldController : MonoBehaviour
 
 		SetPlayerPos( CurrentWorld.transform.position );
 		CurrentWorld.Generate( this );
-		IniPlayerPos();
+		InitializePlayer();
 	}
 
 	protected void SetPlayerPos( Vector3 pos )
@@ -75,8 +79,9 @@ public class WorldController : MonoBehaviour
 			Player.enabled = true;
 	}
 
-	protected void IniPlayerPos()
+	protected void InitializePlayer()
 	{
+		Player.Initialize();
 		SetPlayerPos( CurrentWorld.GetNearestTerrainRealPos( Player.transform.position ) + PlayerOffset );
 	}
 

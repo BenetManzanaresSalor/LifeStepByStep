@@ -14,7 +14,7 @@ public enum LC_Map_RenderType : int
 /// Default map class of Lost Cartographer Pack.
 /// </summary>
 [RequireComponent( typeof( RawImage ) )]
-public class LC_Map<Terrain, Chunk, Cell> : LC_GenericMap<Terrain, Chunk, Cell> where Terrain : LC_Terrain<Chunk,Cell> where Chunk : LC_Chunk<Cell> where Cell : LC_Cell
+public class LC_Map<Terrain, Chunk, Cell> : LC_GenericMap<Terrain, Chunk, Cell> where Terrain : LC_Terrain<Chunk, Cell> where Chunk : LC_Chunk<Cell> where Cell : LC_Cell
 {
 	#region Attributes	
 
@@ -60,12 +60,10 @@ public class LC_Map<Terrain, Chunk, Cell> : LC_GenericMap<Terrain, Chunk, Cell> 
 		Color32 color;
 
 		if ( cell == null )
-		{
 			color = Color.black;
-		}
 		else
 		{
-			float heightPercentage = Mathf.Clamp( Mathf.InverseLerp( 0, TerrainToMap.MaxHeight, cell.Height ), 0, 0.99f );
+			float heightPercentage = Mathf.Clamp( GetHeightPercentage( cell ), 0, 0.99f );
 			float colorFloatIndex = heightPercentage * ( Colors.Length - 1 );
 
 			switch ( RenderType )
@@ -86,6 +84,11 @@ public class LC_Map<Terrain, Chunk, Cell> : LC_GenericMap<Terrain, Chunk, Cell> 
 
 		return color;
 	}
-	
+
+	protected virtual float GetHeightPercentage( Cell cell )
+	{
+		return Mathf.InverseLerp( 0, TerrainToMap.MaxHeight, cell.Height );
+	}
+
 	#endregion
 }

@@ -15,38 +15,38 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	[Header( "Global settings" )]
 	[SerializeField]
 	[Tooltip( "The player used as reference position for generate the terrain.\nAlways required, including if DynamicChunkLoading is disabled." )]
-	protected Transform Player;
+	public Transform Player;
 	[SerializeField]
 	[Tooltip( "Scale of each cell of the terrain." )]
-	protected Vector3 CellSize = Vector3.one;
+	public Vector3 CellSize = Vector3.one;
 	[SerializeField]
 	[Tooltip( "Two raised to this number is the number of cells per side of each chunk.\n" +
 		"If ParallelChunkLoading is used lower values are recomended.\n" +
 		"Big values can cause error, because the chunk mesh can exceed the maximum number of vertices (65536)." )]
 	[Range( 1, 8 )]
-	protected int ChunkSizeLevel = 4;
+	public int ChunkSizeLevel = 4;
 	[SerializeField]
 	[Tooltip( "Distance from the player to a chunk required to load it, defined as number of chunks.\nAlong with ChunkSizeLevel, defines the final render distance." )]
 	[Range( 0, 64 )]
-	protected int ChunkRenderDistance = 8;
+	public int ChunkRenderDistance = 8;
 	[SerializeField]
 	[Tooltip( "If the chunks have MeshCollider.\nIt can affect significantly to the performance." )]
-	protected bool HasCollider = true;
+	public bool HasCollider = true;
 	[SerializeField]
 	[Tooltip( "If the chunks are loaded around the player when he moves." )]
-	protected bool DynamicChunkLoading = true;
+	public bool DynamicChunkLoading = true;
 	[SerializeField]
 	[Tooltip( "If use parallel Tasks to speed up chunk loading." )]
-	protected bool ParallelChunkLoading = true;
+	public bool ParallelChunkLoading = true;
 	[SerializeField]
 	[Tooltip( "Material to use at MeshRenderer." )]
-	protected Material RenderMaterial;
+	public Material RenderMaterial;
 	[SerializeField]
 	[Tooltip( "Maximum seconds for every Update call.\n" +
 		"This value is checked between every chunk load or build, avoiding further loads during that frame if the maximum time is exceeded.\n" +
 		"Lower values means better framerate but slower chunk loading." )]
 	[Min( float.MinValue )]
-	protected float MaxUpdateTime = 1f / ( 60f * 2f );
+	public float MaxUpdateTime = 1f / ( 60f * 2f );
 
 	#endregion
 
@@ -79,8 +79,10 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	/// </summary>
 	public virtual void Generate()
 	{
-		ChunkSize = (int)Mathf.Pow( 2, ChunkSizeLevel );
 		CurrentRealPos = transform.position;
+
+		ChunkSize = (int)Mathf.Pow( 2, ChunkSizeLevel );
+		ChunkRenderRealDistance = ChunkRenderDistance * ChunkSize * Mathf.Max( CellSize.x, CellSize.z );		
 
 		HalfChunk = new Vector3( CellSize.x, 0, CellSize.z ) * ( ChunkSize / 2 );
 		ChunksLoading = new Dictionary<Vector2Int, Chunk>();
