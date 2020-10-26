@@ -33,8 +33,8 @@ public class Entity : WorldObject
 	[SerializeField] [Range( MinEnergyValue, MaxEnergyValue )] protected float ProblematicEnergyPercentage = 50;
 
 	[Header( "Movement" )]
-	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float Move1msCost = 2;
-	[SerializeField] protected Vector2 MinAndMaxMoveSeconds = new Vector2( 0.75f, 1.25f );
+	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float Move1msCost = 1.5f;
+	[SerializeField] protected Vector2 MinAndMaxMoveSeconds = new Vector2( 1f, 1.25f );
 	[SerializeField] protected Vector2 MinAndMaxFastMoveDivisor = new Vector2( 1f, 3f );
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float RandomMoveCost = NullEnergyCost;
 	[SerializeField] [Range( 0, 100 )] protected int ConserveDirectionProbability = 50;
@@ -46,15 +46,15 @@ public class Entity : WorldObject
 	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float EatingCost = 0;
 
 	[Header( "Growing and reproduction" )]
-	[SerializeField] protected Vector2 MinAndMaxSecondsToGrow = new Vector2( 20f, 40f );
+	[SerializeField] protected Vector2 MinAndMaxSecondsToGrow = new Vector2( 10f, 20f );
 	[SerializeField] protected Vector3 ChildScale = Vector3.one * 0.6f;
 	[SerializeField] protected Vector3 AdultScale = Vector3.one;
 	[SerializeField] protected Vector2 MinAndMaxReproductionCooldown = new Vector2( 30f, 60f );
-	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float ReproductionCost = 10;
+	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float ReproductionCost = 15;
 	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float GiveBirthCost = 25;
 
 	[Header( "Death" )]
-	[SerializeField] protected Vector2 MinAndMaxSecondsToLive = new Vector2( 60f, 120f );
+	[SerializeField] protected Vector2 MinAndMaxSecondsToOld = new Vector2( 120f, 180f );
 
 	[Header( "Information render" )]
 	[SerializeField] protected SpriteRenderer FemenineSprite;
@@ -62,10 +62,10 @@ public class Entity : WorldObject
 	[SerializeField] protected SpriteRenderer EnergyBar;
 	[SerializeField] protected Color GoodEnergyColor = Color.green;
 	[SerializeField] protected Color ProblematicEnergyColor = Color.red;
-	[SerializeField] protected SpriteRenderer SearchingSprite;
+	[SerializeField] protected SpriteRenderer IsSearchingSprite;
 	[SerializeField] protected SpriteRenderer HasTargetSprite;
-	[SerializeField] protected SpriteRenderer HasToEatSprite;
-	[SerializeField] protected SpriteRenderer HasToReproduceSprite;
+	[SerializeField] protected SpriteRenderer EatSprite;
+	[SerializeField] protected SpriteRenderer ReproduceSprite;
 	[SerializeField] protected SpriteRenderer IsOldSprite;
 	[SerializeField] protected LineRenderer TargetLineRenderer;
 	[SerializeField] protected ParticleSystem ReproductionParticles;
@@ -76,12 +76,12 @@ public class Entity : WorldObject
 	#region Function attributes
 
 	public bool IsAlive { get; protected set; }
-	protected float SecondsAlive = 0;
-	protected float Energy;
+	public float SecondsAlive { get; protected set; }
+	public float Energy { get; protected set; }
 	protected float MovementProgress;
-	protected float NormalMoveSeconds;
-	protected float FastMoveDivisor;
-	protected float FastMoveSeconds;
+	public float NormalMoveSeconds { get; protected set; }
+	public float FastMoveDivisor { get; protected set; }
+	public float FastMoveSeconds { get; protected set; }
 	protected Vector3 OriginPosition;
 	public Vector2Int Direction
 	{
@@ -99,13 +99,13 @@ public class Entity : WorldObject
 	protected bool TargetAccesible = false;
 
 	protected List<EntityAction> ActionsList;
-	protected WorldObject Target;
+	public WorldObject Target { get; protected set; }
 
 	protected System.Random RandomGenerator;
 
 	protected float SecondsToGrow;
-	protected bool IsAdult = false;
-	protected bool IsFemale;
+	public bool IsAdult { get; protected set; }
+	public bool IsFemale { get; protected set; }
 
 	protected float ReproductionCooldown;
 	protected float LastReproductionTime;
@@ -114,7 +114,7 @@ public class Entity : WorldObject
 	protected float ChildNormalMoveSeconds;
 	protected float ChildFastMoveDivisor;
 
-	protected float YoungSeconds;
+	protected float SecondsToOld;
 	protected int LastSecondOld = 0;
 
 	#endregion
@@ -133,8 +133,8 @@ public class Entity : WorldObject
 		RandomGenerator = CurrentWorld.RandomGenerator;
 
 		Direction = Vector2Int.zero;
-		NormalMoveSeconds = MinAndMaxMoveSeconds.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxMoveSeconds.y - MinAndMaxMoveSeconds.x );
-		FastMoveDivisor = MinAndMaxFastMoveDivisor.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxFastMoveDivisor.y - MinAndMaxFastMoveDivisor.x );
+		NormalMoveSeconds = (float)MathFunctions.RandomDouble( RandomGenerator, MinAndMaxMoveSeconds );
+		FastMoveDivisor = (float)MathFunctions.RandomDouble( RandomGenerator, MinAndMaxFastMoveDivisor );
 		FastMoveSeconds = NormalMoveSeconds / FastMoveDivisor;
 		MovementProgress = 0;
 
@@ -145,10 +145,10 @@ public class Entity : WorldObject
 		transform.localScale = ChildScale.Div( transform.parent.lossyScale );
 		transform.position = CurrentPositionToReal();
 
-		SecondsToGrow = MinAndMaxSecondsToGrow.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxSecondsToGrow.y - MinAndMaxSecondsToGrow.x );
-		ReproductionCooldown = MinAndMaxReproductionCooldown.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxReproductionCooldown.y - MinAndMaxReproductionCooldown.x );
+		SecondsToGrow = (float)MathFunctions.RandomDouble( RandomGenerator, MinAndMaxSecondsToGrow );
+		ReproductionCooldown = (float)MathFunctions.RandomDouble( RandomGenerator, MinAndMaxReproductionCooldown );
 
-		YoungSeconds = MinAndMaxSecondsToLive.x + (float)RandomGenerator.NextDouble() * ( MinAndMaxSecondsToLive.y - MinAndMaxSecondsToLive.x );
+		SecondsToOld = (float)MathFunctions.RandomDouble( RandomGenerator, MinAndMaxSecondsToOld );
 
 		ActionsList = CreateActionsList();
 	}
@@ -173,12 +173,12 @@ public class Entity : WorldObject
 			SecondsAlive += Time.deltaTime;
 
 			// If is old, has a probabiliy of die
-			if ( SecondsAlive > YoungSeconds )
+			if ( IsOld() )
 			{
 				// If is a different second
 				if ( LastSecondOld != (int)SecondsAlive )
 				{
-					float deathProbabilty = SecondsAlive / YoungSeconds - 1;
+					float deathProbabilty = SecondsAlive / SecondsToOld - 1;
 					if ( deathProbabilty > RandomGenerator.NextDouble() * 2 )
 						IsAlive = false;
 
@@ -197,21 +197,47 @@ public class Entity : WorldObject
 		return IsAlive;
 	}
 
+	public virtual bool IsOld()
+	{
+		return SecondsAlive > SecondsToOld;
+	}
+
+	public virtual void GetState( out bool hasTarget, out bool isSearching, out bool eat, out bool reproduce, out bool isOld )
+	{
+		hasTarget = HasTarget();
+		isSearching = !hasTarget && HasToSearch();
+
+		if ( hasTarget )
+		{
+			eat = Target is Food;
+			reproduce = Target is Entity;
+		}
+		else if ( isSearching )
+		{
+			eat = HasToEat();
+			reproduce = !eat && HasToReproduce();
+		}
+		else
+		{
+			eat = false;
+			reproduce = false;
+		}
+
+		isOld = IsOld();
+	}
+
 	protected virtual void UpdateStateRenderer()
 	{
-		bool hasTarget = Target != null;
-		bool isSearching = !hasTarget && HasToSearch();
+		GetState( out bool hasTarget, out bool isSearching, out bool eat, out bool reproduce, out bool isOld );
 
-		SearchingSprite.enabled = isSearching;
-
-		bool hasToEat = HasProblematicEnergy() || Target is Food;
-		HasToEatSprite.enabled = hasToEat;
-		HasToReproduceSprite.enabled = !hasToEat && HasToReproduce();
-
-		IsOldSprite.enabled = SecondsAlive > YoungSeconds;
-
+		// State sprites
+		IsSearchingSprite.enabled = isSearching;
 		HasTargetSprite.enabled = hasTarget;
+		EatSprite.enabled = eat;
+		ReproduceSprite.enabled = reproduce;
+		IsOldSprite.enabled = isOld;
 
+		// Gizmos
 		if ( hasTarget && CurrentWorld.TargetRays )
 		{
 			TargetLineRenderer.enabled = true;
@@ -220,16 +246,6 @@ public class Entity : WorldObject
 		}
 		else
 			TargetLineRenderer.enabled = false;
-	}
-
-	protected virtual bool HasProblematicEnergy()
-	{
-		return Energy < ProblematicEnergyPercentage;
-	}
-
-	protected virtual bool HasToReproduce()
-	{
-		return IsAdult && !IsPregnant && !HasProblematicEnergy() && ( SecondsAlive - LastReproductionTime ) >= ReproductionCooldown;
 	}
 
 	#endregion
@@ -277,7 +293,7 @@ public class Entity : WorldObject
 
 	#region Give birth
 
-	protected virtual bool HasToGiveBirth()
+	public virtual bool HasToGiveBirth()
 	{
 		return IsPregnant && HasToMove() && PreviousCell.IsFree();
 	}
@@ -299,7 +315,7 @@ public class Entity : WorldObject
 
 	#region Move
 
-	protected virtual bool HasToMove()
+	public virtual bool HasToMove()
 	{
 		return transform.position != CurrentPositionToReal();
 	}
@@ -308,7 +324,7 @@ public class Entity : WorldObject
 	{
 		float cost = NullEnergyCost;
 
-		float currentMovementSeconds = Target ? FastMoveSeconds : NormalMoveSeconds;
+		float currentMovementSeconds = HasToRun() ? FastMoveSeconds : NormalMoveSeconds;
 		MovementProgress = Mathf.Min( MovementProgress + Time.deltaTime / currentMovementSeconds, 1 );
 		Vector3 destinyPosition = CurrentPositionToReal();
 		if ( MovementProgress != 1 )
@@ -328,6 +344,11 @@ public class Entity : WorldObject
 		return cost;
 	}
 
+	public virtual bool HasToRun()
+	{
+		return Target != null;
+	}
+
 	protected virtual float EndedMovement()
 	{
 		float currentMovementSeconds = Target ? FastMoveSeconds : NormalMoveSeconds;
@@ -343,15 +364,44 @@ public class Entity : WorldObject
 	{
 		bool hasToInteract = false;
 
-		if ( Target )
+		if ( HasTarget() )
 		{
-			if ( Target is Food )
-				hasToInteract = Energy < MaxEnergyValue;
-			else if ( Target is Entity )
-				hasToInteract = HasToReproduce();
+			hasToInteract = CanEat();
+			if ( !hasToInteract )
+				hasToInteract = CanReproduce();
 		}
 
 		return hasToInteract && MathFunctions.IsTouchingObjective( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible );
+	}
+
+	public virtual bool HasTarget()
+	{
+		return Target != null;
+	}
+
+	public virtual bool CanEat()
+	{
+		return HasToEat() || Target is Food && Energy < MaxEnergyValue;
+	}
+
+	public virtual bool HasToEat()
+	{
+		return HasProblematicEnergy();
+	}
+
+	public virtual bool HasProblematicEnergy()
+	{
+		return Energy < ProblematicEnergyPercentage;
+	}
+
+	public virtual bool CanReproduce()
+	{
+		return HasToReproduce() && Target is Entity;
+	}
+
+	public virtual bool HasToReproduce()
+	{
+		return IsAdult && !IsPregnant && !HasToEat() && ( SecondsAlive - LastReproductionTime ) >= ReproductionCooldown;
 	}
 
 	protected virtual float InteractWithTargetAction()
@@ -407,9 +457,9 @@ public class Entity : WorldObject
 
 	#region Search and move to target
 
-	protected virtual bool HasToSearch()
+	public virtual bool HasToSearch()
 	{
-		bool hasToSearch = HasProblematicEnergy() || HasToReproduce();
+		bool hasToSearch = HasToEat() || HasToReproduce();
 
 		if ( !hasToSearch )
 			Target = null;
@@ -515,9 +565,9 @@ public class Entity : WorldObject
 
 	#region Grow
 
-	protected virtual bool HasToGrow()
+	public virtual bool HasToGrow()
 	{
-		return !IsAdult && !HasProblematicEnergy() && SecondsAlive >= SecondsToGrow;
+		return !IsAdult && !HasToEat() && SecondsAlive >= SecondsToGrow;
 	}
 
 	protected virtual float GrowAction()
@@ -567,19 +617,23 @@ public class Entity : WorldObject
 			IsAlive = false;
 	}
 
-	protected virtual void IncrementEnergy( float amount )
+	protected virtual void IncrementEnergy( float increment )
 	{
-		SetEnergy( Energy + amount );
+		SetEnergy( Energy + increment );
 	}
 
 	public override void Destroy()
 	{
 		IsAlive = false;
+		base.Destroy();
+	}
 
+	public virtual void Die()
+	{
 		ParticleSystem particles = Instantiate( DeathParticles, this.transform.position, Quaternion.identity );
 		Destroy( particles.gameObject, particles.main.duration );
 
-		base.Destroy();
+		Destroy();
 	}
 
 	#endregion

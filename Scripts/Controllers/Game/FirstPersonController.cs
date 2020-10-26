@@ -6,45 +6,53 @@ public class FirstPersonController : LC_FirstPersonController
 
 	#region Settings
 
-	[Header("Clamp position settings")]
+	[Header( "Clamp position settings" )]
 	[SerializeField] protected float MaxHeight = 100;
 
 	#endregion
 
 	#region Function
 
-	protected WorldTerrain Terrain;
-	protected Vector3 MaxPosition;
+	protected GameController GameController;
 	protected Vector3 MinPosition;
+	protected Vector3 MaxPosition;
 
 	#endregion
 
 	#endregion
 
-	public override void Initialize()
+	public void Initialize( GameController gameController )
 	{
 		base.Initialize();
 
-		if ( Terrain == null )
-			Terrain = FindObjectOfType<WorldTerrain>();
+		GameController = gameController;
 
-		Vector3 offset = Terrain.HalfChunk + Terrain.ChunkRenderDistance * Terrain.ChunkSize * Terrain.CellSize;
-		MaxPosition = Terrain.transform.position + offset;
-		MaxPosition.y = Terrain.transform.position.y + MaxHeight;
-		MinPosition = Terrain.transform.position - offset;
-		MinPosition.y = Terrain.transform.position.y;
+		GameController.GetTerrainLimits( out MinPosition, out MaxPosition );
 	}
 
 	protected override void Update()
 	{
 		RotateEnabled = Input.GetMouseButton( 1 );
 
+		if ( Input.GetMouseButtonDown( 0 ) )
+			SelectCell();
+
 		base.Update();
 
 		ClampPosition();
 	}
 
-	protected virtual void ClampPosition()
+	protected void SelectCell()
+	{
+		Vector3 mousePosition = Input.mousePosition;
+		mousePosition.z = Camera.main.nearClipPlane;
+
+		Ray ray = Camera.main.ScreenPointToRay( mousePosition );
+		bool isCollision = Physics.Raycast( ray, out RaycastHit hit, 1000 );		
+		GameController.SelectCell( isCollision, hit );
+	}
+
+	protected void ClampPosition()
 	{
 		Vector3 pos = transform.position;
 

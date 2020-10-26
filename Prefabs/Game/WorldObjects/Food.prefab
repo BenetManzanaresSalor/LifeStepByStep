@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7070198154116340410}
   - component: {fileID: -3144363907454861943}
   - component: {fileID: 2270702205585900818}
+  - component: {fileID: 7213454801542306901}
   m_Layer: 0
   m_Name: Food
   m_TagString: Untagged
@@ -95,7 +96,7 @@ MonoBehaviour:
   VerticalOffset: 0
   RotationOffset: 0
   BaseEnergy: 300
-  ActionsToEat: 25
+  SecondsToEat: 10
   RegenerationPercentagePerSecond: 5
   DestroyWhenEmpty: 1
 --- !u!114 &2270702205585900818
@@ -114,3 +115,17 @@ MonoBehaviour:
   InX: 0
   InY: 1
   InZ: 0
+--- !u!64 &7213454801542306901
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7070198154116340408}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Convex: 1
+  m_CookingOptions: 14
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}

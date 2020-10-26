@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 
-public class WorldController : MonoBehaviour
+public class GameController : MonoBehaviour
 {
 	#region Attributes
 
@@ -14,9 +14,9 @@ public class WorldController : MonoBehaviour
 
 	#region Function
 
-	public World CurrentWorld { get; protected set; }
-	public FirstPersonController Player { get; protected set; }
-	public UIController UI { get; protected set; }
+	protected World World;
+	protected FirstPersonController Player;
+	protected GameUI UI;
 
 	#endregion
 
@@ -26,9 +26,10 @@ public class WorldController : MonoBehaviour
 
 	protected void Start()
 	{
-		CurrentWorld = FindObjectOfType<World>();
+		World = FindObjectOfType<World>();
 		Player = FindObjectOfType<FirstPersonController>();
-		UI = FindObjectOfType<UIController>();
+		UI = FindObjectOfType<GameUI>();
+		
 
 		RestartWorld();
 	}
@@ -51,20 +52,21 @@ public class WorldController : MonoBehaviour
 
 	#region Controls
 
-	public void ToggleAutomaticSteping()
-	{
-		CurrentWorld.ToggleAutomaticSteping();
-		UI.SetAutomaticSteping( CurrentWorld.AutomaticSteping );
-	}
-
 	public void RestartWorld()
 	{
-		if ( CurrentWorld.AutomaticSteping )
+		if ( World.AutomaticSteping )
 			ToggleAutomaticSteping();
 
-		SetPlayerPos( CurrentWorld.transform.position );
-		CurrentWorld.Generate( this );
+		SetPlayerPos( World.transform.position );
+		World.Initialize( this, Player.transform );
+		UI.Initialize( this );
 		InitializePlayer();
+	}
+
+	public void ToggleAutomaticSteping()
+	{
+		World.ToggleAutomaticSteping();
+		UI.SetAutomaticSteping( World.AutomaticSteping );
 	}
 
 	protected void SetPlayerPos( Vector3 pos )
@@ -81,8 +83,33 @@ public class WorldController : MonoBehaviour
 
 	protected void InitializePlayer()
 	{
-		Player.Initialize();
-		SetPlayerPos( CurrentWorld.GetNearestTerrainRealPos( Player.transform.position ) + PlayerOffset );
+		Player.Initialize( this );
+		SetPlayerPos( World.GetClosestCellRealPos( Player.transform.position ) + PlayerOffset );
+	}
+
+	#endregion
+
+	#region External use
+
+	public void GetTerrainLimits( out Vector3 minPos, out Vector3 maxPos )
+	{
+		World.Terrain.GetTerrainLimits( out minPos, out maxPos );
+	}
+
+	public void SelectCell( bool isCollision, RaycastHit hit )
+	{
+		WorldCell cell = null;
+
+		if ( isCollision )
+		{
+			WorldObject worldObj = hit.transform.GetComponent<WorldObject>();
+			if ( worldObj != null )
+				cell = worldObj.CurrentCell;
+			else
+				cell = World.GetClosestCell( hit.point );
+		}
+
+		UI.SetCellToDescribe( cell );
 	}
 
 	public void ExitGame()

@@ -129,5 +129,16 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 		return canMove;
 	}
 
+	public void GetTerrainLimits( out Vector3 minPos, out Vector3 maxPos )
+	{
+		int cellsPerDirection = ChunkRenderDistance * ChunkSize;
+		Vector3 offset = HalfChunk + cellsPerDirection * CellSize;
+		minPos = transform.position - offset;
+		minPos.y = transform.position.y;
+		offset = HalfChunk + ( cellsPerDirection - 1 ) * CellSize;
+		maxPos = transform.position + offset;
+		maxPos.y = transform.position.y + MaxHeight;
+	}
+
 	#endregion
 }

@@ -16,7 +16,7 @@ public class Food : WorldObject
 
 	#region Function attributes
 
-	protected float Energy;
+	public float Energy { get; protected set; }
 	protected Vector3 InitialLocalScale;
 	protected bool HasToRegenerate { get { return Energy < BaseEnergy; } }
 	protected float RegenerationMultiplier { get { return RegenerationPercentagePerSecond / 100; } }

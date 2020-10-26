@@ -25,14 +25,14 @@ public class World : MonoBehaviour
 
 	#region Function attributes
 
-	public WorldController Controller { get; protected set; }
+	public GameController GameController { get; protected set; }
 	public WorldTerrain Terrain { get; protected set; }
 	protected List<Entity> EntitiesList;
 	public bool AutomaticSteping { get; protected set; }
 	public float UpdateIniTime { get; protected set; }
 	protected int EntityIdx = 0;
 
-	public bool TargetRays { get => Controller.TargetRays; }
+	public bool TargetRays { get => GameController.TargetRays; }
 
 	public System.Random RandomGenerator { get; protected set; }
 
@@ -42,12 +42,16 @@ public class World : MonoBehaviour
 
 	#region Initialization
 
-	public virtual void Generate( WorldController worldController )
+	public virtual void Initialize( GameController gameController, Transform player )
 	{
-		Controller = worldController;
+		GameController = gameController;
 
 		if ( Terrain == null )
+		{
 			Terrain = GetComponent<WorldTerrain>();
+			Terrain.Player = player;
+		}
+
 		RandomGenerator = UseRandomSeed ? new System.Random() : new System.Random( Seed );
 		Terrain.RandomGenerator = RandomGenerator;
 
@@ -122,7 +126,7 @@ public class World : MonoBehaviour
 				isAlive = entity.Step();
 				if ( !isAlive )
 				{
-					DestroyEntity( entity );
+					EntityDie( entity );
 					EntitiesList.RemoveAt( EntityIdx );
 					EntityIdx--; // Adjust because of remove
 				}
@@ -140,25 +144,30 @@ public class World : MonoBehaviour
 		return ( Time.realtimeSinceStartup - UpdateIniTime + averageIterationTime ) <= MaxUpdateTime;
 	}
 
-	protected virtual void DestroyEntity( Entity entity )
+	protected virtual void EntityDie( Entity entity )
 	{
 		UnityEngine.Debug.Log( $"[DESTROYED] {entity}" );
-		entity.Destroy();
+		entity.Die();
 	}
 
 	#endregion
 
 	#region External use
 
-	public Vector3 GetNearestTerrainRealPos( Vector3 realPos )
+	public Vector3 GetClosestCellRealPos( Vector3 realPos )
 	{
 		Vector3 res = Vector3.zero;
 
-		WorldCell cell = Terrain.GetCell( realPos );
+		WorldCell cell = GetClosestCell( realPos );
 		if ( cell != null )
 			res = Terrain.TerrainPosToReal( cell );
 
 		return res;
+	}
+
+	public WorldCell GetClosestCell( Vector3 realPos )
+	{
+		return Terrain.GetCell( realPos );
 	}
 
 	public void ToggleAutomaticSteping()

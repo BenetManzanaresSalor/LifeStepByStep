@@ -18,7 +18,6 @@ public class WorldMap : LC_Map<WorldTerrain, LC_Chunk<WorldCell>, WorldCell>
 
 	#endregion
 
-
 	protected override void Start()
 	{
 		int maxColorIdx = Colors.Length - 1;
@@ -27,7 +26,6 @@ public class WorldMap : LC_Map<WorldTerrain, LC_Chunk<WorldCell>, WorldCell>
 
 		base.Start();
 	}
-
 
 	protected override Color32 GetColorPerCell( WorldCell cell )
 	{

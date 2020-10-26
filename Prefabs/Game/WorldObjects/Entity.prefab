@@ -383,6 +383,7 @@ GameObject:
   - component: {fileID: 8973386011568647889}
   - component: {fileID: 5844731789235318175}
   - component: {fileID: 3880249165939519226}
+  - component: {fileID: 4827543574643276803}
   m_Layer: 0
   m_Name: Entity
   m_TagString: Untagged
@@ -435,16 +436,16 @@ MonoBehaviour:
   MinAndMaxReproductionCooldown: {x: 30, y: 60}
   ReproductionCost: 15
   GiveBirthCost: 25
-  MinAndMaxSecondsToLive: {x: 120, y: 180}
+  MinAndMaxSecondsToOld: {x: 120, y: 180}
   FemenineSprite: {fileID: 2429294760421302207}
   MasculineSprite: {fileID: 6183386586456320829}
   EnergyBar: {fileID: 1872841114158746989}
   GoodEnergyColor: {r: 0.454902, g: 0.64705884, b: 0.0627451, a: 1}
   ProblematicEnergyColor: {r: 0.8584906, g: 0.17412782, b: 0.17412782, a: 1}
-  SearchingSprite: {fileID: 7780913804170522683}
+  IsSearchingSprite: {fileID: 7780913804170522683}
   HasTargetSprite: {fileID: 4668514414639215060}
-  HasToEatSprite: {fileID: 7038359298053940780}
-  HasToReproduceSprite: {fileID: 2225731435473267086}
+  EatSprite: {fileID: 7038359298053940780}
+  ReproduceSprite: {fileID: 2225731435473267086}
   IsOldSprite: {fileID: 4641246472243252157}
   TargetLineRenderer: {fileID: 8973386011568647889}
   ReproductionParticles: {fileID: 9054275132082993715, guid: 3e34cc80e0109184ebfba5759da1cb1d,
@@ -602,6 +603,20 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+--- !u!64 &4827543574643276803
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5221297354027885548}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Convex: 1
+  m_CookingOptions: 14
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &5455708838122614965
 GameObject:
   m_ObjectHideFlags: 0
@@ -693,7 +708,7 @@ GameObject:
   - component: {fileID: 8178089873687376069}
   - component: {fileID: 7780913804170522683}
   m_Layer: 0
-  m_Name: Searching Sprite
+  m_Name: Is Searching Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -826,7 +841,7 @@ GameObject:
   - component: {fileID: 2730099613786975610}
   - component: {fileID: 2225731435473267086}
   m_Layer: 0
-  m_Name: Has To Reproduce Sprite
+  m_Name: Reproduce Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -986,7 +1001,7 @@ GameObject:
   - component: {fileID: 1739783429716531836}
   - component: {fileID: 7038359298053940780}
   m_Layer: 0
-  m_Name: Has To Eat Sprite
+  m_Name: Eat Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

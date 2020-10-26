@@ -8,8 +8,8 @@ public static class MathFunctions
 
 	public static readonly List<Vector2Int> FourDirections2D = new List<Vector2Int> { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
 	public static readonly List<Vector2Int> EightDirections2D = new List<Vector2Int>
-		{ Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left,
-		Vector2Int.up + Vector2Int.right, Vector2Int.up + Vector2Int.left, Vector2Int.down + Vector2Int.right, Vector2Int.down + Vector2Int.left};
+		{ Vector2Int.up, Vector2Int.up + Vector2Int.right, Vector2Int.right, Vector2Int.right + Vector2Int.down, Vector2Int.down,
+		Vector2Int.down + Vector2Int.left, Vector2Int.left,  Vector2Int.left + Vector2Int.up };
 
 	#endregion
 
@@ -456,30 +456,41 @@ public static class MathFunctions
 		bool useSameDirection = randGenerator.Next( 0, 100 ) <= sameDirectionProb;
 
 		// If is possible continue in the same direction ( not 0,0 )
-		if ( !lastDirection.Equals( Vector2Int.zero ) && useSameDirection && IsPossibleDirection( origin, lastDirection, isPositionAccessible ) )
+		if ( useSameDirection && !lastDirection.Equals( Vector2Int.zero ) && IsPossibleDirection( origin, lastDirection, isPositionAccessible ) )
 		{
 			nextDirection = lastDirection;
 		}
 		// Search a new random direction different of last
 		else
 		{
-			List<Vector2Int> directions = new List<Vector2Int>( EightDirections2D );
-			directions.Remove( lastDirection );
-			directions.Remove( lastDirection * -1 ); // By now, discard the opposite of last direction for avoid loops
+			int lastDirectionIdx = EightDirections2D.IndexOf( lastDirection );
+			// If any previous direction is possible, assign one random
+			if ( lastDirectionIdx == -1 )
+				lastDirectionIdx = randGenerator.Next( 0, EightDirections2D.Count );
 
+			// Check the possible directions incrementing the offset relative to lastDirection
+			int idx;
+			bool turnRight;
 			Vector2Int possibleDirection;
-			while ( directions.Count > 0 && nextDirection == Vector2Int.zero )
+			for ( int offset = 1; offset < EightDirections2D.Count / 2 && nextDirection == Vector2Int.zero; offset++ )
 			{
-				possibleDirection = directions[randGenerator.Next( 0, directions.Count )];
+				turnRight = randGenerator.Next( 0, 2 ) == 0;
 
+				idx = LC_Math.Mod( lastDirectionIdx + ( turnRight ? offset : -offset ), EightDirections2D.Count );
+				possibleDirection = EightDirections2D[idx];
 				if ( IsPossibleDirection( origin, possibleDirection, isPositionAccessible ) )
 					nextDirection = possibleDirection;
 				else
-					directions.Remove( possibleDirection );
+				{
+					idx = LC_Math.Mod( lastDirectionIdx + ( !turnRight ? offset : -offset ), EightDirections2D.Count );
+					possibleDirection = EightDirections2D[idx];
+					if ( IsPossibleDirection( origin, possibleDirection, isPositionAccessible ) )
+						nextDirection = possibleDirection;
+				}
 			}
 
-			// If any other direction isn't possible, check the opposite to last direction
-			if ( nextDirection.Equals( Vector2Int.zero ) )
+			// If any other direction isn't possible, check the opposite of last direction
+			if ( nextDirection == Vector2Int.zero )
 			{
 				possibleDirection = lastDirection * -1;
 				if ( IsPossibleDirection( origin, possibleDirection, isPositionAccessible ) )
@@ -493,6 +504,11 @@ public static class MathFunctions
 	public static double RandomDouble( System.Random randomGenerator, double minInclusive, double maxExclusive )
 	{
 		return minInclusive + randomGenerator.NextDouble() * ( maxExclusive - minInclusive );
+	}
+
+	public static double RandomDouble( System.Random randomGenerator, Vector2 minInclusiveAndMaxExclusive )
+	{
+		return minInclusiveAndMaxExclusive.x + randomGenerator.NextDouble() * ( minInclusiveAndMaxExclusive.y - minInclusiveAndMaxExclusive.x );
 	}
 
 	#endregion

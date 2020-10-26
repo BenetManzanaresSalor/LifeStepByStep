@@ -14,6 +14,9 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 
 	[Header( "Global settings" )]
 	[SerializeField]
+	[Tooltip( "If the terrain is generated in Start method." )]
+	protected bool GenerateAtStart = true;
+	[SerializeField]
 	[Tooltip( "The player used as reference position for generate the terrain.\nAlways required, including if DynamicChunkLoading is disabled." )]
 	public Transform Player;
 	[SerializeField]
@@ -74,6 +77,12 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 
 	#region Initialization
 
+	protected virtual void Start()
+	{
+		if ( GenerateAtStart )
+			Generate();
+	}
+
 	/// <summary>
 	/// Initialize the variables, destroy the previous terrain (if exists) and generates a new terrain.
 	/// </summary>
@@ -82,7 +91,7 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 		CurrentRealPos = transform.position;
 
 		ChunkSize = (int)Mathf.Pow( 2, ChunkSizeLevel );
-		ChunkRenderRealDistance = ChunkRenderDistance * ChunkSize * Mathf.Max( CellSize.x, CellSize.z );		
+		ChunkRenderRealDistance = ChunkRenderDistance * ChunkSize * Mathf.Max( CellSize.x, CellSize.z );
 
 		HalfChunk = new Vector3( CellSize.x, 0, CellSize.z ) * ( ChunkSize / 2 );
 		ChunksLoading = new Dictionary<Vector2Int, Chunk>();
@@ -647,6 +656,11 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 		return TerrainPosToReal( terrainPos.x, height, terrainPos.y );
 	}
 
+	public virtual Vector3 TerrainPosToReal( Vector3Int terrainPos )
+	{
+		return TerrainPosToReal( terrainPos.x, terrainPos.y, terrainPos.z );
+	}
+
 	public virtual Vector3 TerrainPosToReal( Cell cell )
 	{
 		return TerrainPosToReal( cell.TerrainPos, cell.Height );
@@ -660,7 +674,7 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	public virtual Vector3Int RealPosToTerrain( Vector3 realPos )
 	{
 		Vector3 relativePos = realPos - CurrentRealPos + HalfChunk;
-		return new Vector3Int( (int)( relativePos.x / CellSize.x ), (int)( relativePos.y / CellSize.y ), (int)( relativePos.z / CellSize.z ) );
+		return new Vector3Int( Mathf.RoundToInt( relativePos.x / CellSize.x ), Mathf.RoundToInt( relativePos.y / CellSize.y ), Mathf.RoundToInt( relativePos.z / CellSize.z ) );
 	}
 
 	public virtual Vector3Int GetPlayerTerrainPos()
@@ -738,6 +752,11 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	public virtual Cell GetCell( Vector3 realPos, bool isForMap = false )
 	{
 		Vector3Int terrainPos = RealPosToTerrain( realPos );
+		return GetCell( terrainPos, isForMap );
+	}
+
+	public virtual Cell GetCell( Vector3Int terrainPos, bool isForMap = false )
+	{
 		return GetCell( new Vector2Int( terrainPos.x, terrainPos.z ), isForMap );
 	}
 
