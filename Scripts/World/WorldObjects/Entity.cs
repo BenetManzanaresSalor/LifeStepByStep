@@ -371,7 +371,7 @@ public class Entity : WorldObject
 				hasToInteract = CanReproduce();
 		}
 
-		return hasToInteract && MathFunctions.IsTouchingObjective( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible );
+		return hasToInteract && MathFunctions.IsTouchingTarget( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible );
 	}
 
 	public virtual bool HasTarget()
@@ -542,12 +542,12 @@ public class Entity : WorldObject
 		TargetAccesible = false;
 		bool movementDone = false;
 
-		List<Vector2Int> PathToTarget = MathFunctions.Pathfinding( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, (int)SearchRadius );
+		List<Vector2Int> PathToTarget = MathFunctions.Pathfinding( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, SearchRadius );
 
 		// If a path to target is possible
 		if ( PathToTarget.Count > 0 )
 		{
-			TargetAccesible = MathFunctions.IsTouchingObjective( PathToTarget[PathToTarget.Count - 1], Target.WorldPosition2D, CurrentTerrain.IsPosAccesible );
+			TargetAccesible = MathFunctions.IsTouchingTarget( PathToTarget[PathToTarget.Count - 1], Target.WorldPosition2D, CurrentTerrain.IsPosAccesible );
 
 			// Try movement
 			movementDone = CurrentTerrain.TryMoveToCell( this, PathToTarget[0] );

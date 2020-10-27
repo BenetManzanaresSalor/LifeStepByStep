@@ -9,29 +9,31 @@ public class GameController : MonoBehaviour
 
 	[SerializeField] protected Vector3 PlayerOffset = Vector3.up;
 	[SerializeField] public bool TargetRays = false;
+	[SerializeField] protected World World;
+	[SerializeField] protected FirstPersonController Player;
+	[SerializeField] protected GameUI UI;
 
 	#endregion
 
 	#region Function
 
-	protected World World;
-	protected FirstPersonController Player;
-	protected GameUI UI;
+	protected MainController MainController;
 
 	#endregion
 
 	#endregion
 
 	#region Initialization
-
-	protected void Start()
-	{
-		World = FindObjectOfType<World>();
-		Player = FindObjectOfType<FirstPersonController>();
-		UI = FindObjectOfType<GameUI>();
 		
-
+	public void Initialize( MainController mainController )
+	{
+		MainController = mainController;
 		RestartWorld();
+	}
+
+	public void SetEnabled( bool enabled )
+	{
+		UI.gameObject.SetActive( enabled );
 	}
 
 	#endregion
@@ -66,7 +68,7 @@ public class GameController : MonoBehaviour
 	public void ToggleAutomaticSteping()
 	{
 		World.ToggleAutomaticSteping();
-		UI.SetAutomaticSteping( World.AutomaticSteping );
+		UI.AutomaticStepingToggled( World.AutomaticSteping );
 	}
 
 	protected void SetPlayerPos( Vector3 pos )
@@ -85,6 +87,14 @@ public class GameController : MonoBehaviour
 	{
 		Player.Initialize( this );
 		SetPlayerPos( World.GetClosestCellRealPos( Player.transform.position ) + PlayerOffset );
+	}
+
+	public void ReturnToMain()
+	{
+		if ( World.AutomaticSteping )
+			ToggleAutomaticSteping();
+
+		MainController.ReturnToMain();
 	}
 
 	#endregion
@@ -110,12 +120,6 @@ public class GameController : MonoBehaviour
 		}
 
 		UI.SetCellToDescribe( cell );
-	}
-
-	public void ExitGame()
-	{
-		Debug.Log( "EXIT" );
-		Application.Quit();
 	}
 
 	#endregion

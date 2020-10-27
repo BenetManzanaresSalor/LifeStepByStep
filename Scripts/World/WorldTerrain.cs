@@ -27,7 +27,8 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 		if ( World == null )
 			World = GetComponent<World>();
 
-		Player = FindObjectOfType<LC_FirstPersonController>().transform;
+		if ( Player == null )
+			Player = FindObjectOfType<LC_FirstPersonController>().transform;
 
 		base.Generate();
 	}

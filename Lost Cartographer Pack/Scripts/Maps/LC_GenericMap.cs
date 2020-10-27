@@ -66,13 +66,19 @@ public abstract class LC_GenericMap<Terrain, Chunk, Cell> : MonoBehaviour where 
 	}
 
 	/// <summary>
-	/// Initializes the map variables and the texture.
+	/// Initializes the map variables and texture.
 	/// </summary>
 	public virtual void Initialize()
 	{
-		TerrainToMap = FindObjectOfType<Terrain>();
-		MapTexture = new Texture2D( TextureWidthAndHeight.x, TextureWidthAndHeight.y );
-		TextureColors = new Color32[MapTexture.width * MapTexture.height];
+		if ( TerrainToMap == null )
+			TerrainToMap = FindObjectOfType<Terrain>();
+
+		if ( MapTexture == null || MapTexture.width != TextureWidthAndHeight.x || MapTexture.height != TextureWidthAndHeight.y )
+			MapTexture = new Texture2D( TextureWidthAndHeight.x, TextureWidthAndHeight.y );
+
+		if ( TextureColors == null || TextureColors.Length != MapTexture.width * MapTexture.height )
+			TextureColors = new Color32[MapTexture.width * MapTexture.height];
+
 		CurrentCellPosInTex = Vector2Int.zero;
 
 		Vector3Int refPos = TerrainToMap.RealPosToTerrain( TerrainToMap.ChunkPosToReal( TerrainToMap.PlayerChunkPos ) );

@@ -15,40 +15,28 @@ public static class MathFunctions
 
 	#region Statistics
 
+	public static int NumCallsAstar { get; private set; }
 	public static long AverageTimeAstar { get; private set; }
 	public static long MaxTimeAstar { get; private set; }
-	private static int NumMeasuresTimeAstar = 0;
-
-	public static float AveragePathlengthAstar { get; private set; }
-	public static float MaxPathlengthAstar { get; private set; }
-	private static int NumMeasuresPathlengthAstar = 0;
-
+	public static float AveragePathLengthAstar { get; private set; }
+	public static float MaxPathLengthAstar { get; private set; }
 	public static float AverageCheckedPositionsAstar { get; private set; }
 	public static float MaxCheckedPositionsAstar { get; private set; }
-	private static int NumMeasuresCheckedPositionsAstar = 0;
 
 	private static void UpdateAstarStatistics( long time, int pathLength, int checkedPositions )
 	{
-		AverageTimeAstar = ( AverageTimeAstar * NumMeasuresTimeAstar + time ) / ( NumMeasuresTimeAstar + 1 );
-		NumMeasuresTimeAstar++;
+		AverageTimeAstar = ( AverageTimeAstar * NumCallsAstar + time ) / ( NumCallsAstar + 1 );
+		NumCallsAstar++;
 		if ( time > MaxTimeAstar )
-		{
 			MaxTimeAstar = time;
-		}
 
-		AveragePathlengthAstar = ( AveragePathlengthAstar * NumMeasuresPathlengthAstar + pathLength ) / ( NumMeasuresPathlengthAstar + 1 );
-		NumMeasuresPathlengthAstar++;
-		if ( pathLength > MaxPathlengthAstar )
-		{
-			MaxPathlengthAstar = pathLength;
-		}
+		AveragePathLengthAstar = ( AveragePathLengthAstar * NumCallsAstar + pathLength ) / ( NumCallsAstar + 1 );
+		if ( pathLength > MaxPathLengthAstar )
+			MaxPathLengthAstar = pathLength;
 
-		AverageCheckedPositionsAstar = ( AverageCheckedPositionsAstar * NumMeasuresCheckedPositionsAstar + checkedPositions ) / ( NumMeasuresCheckedPositionsAstar + 1 );
-		NumMeasuresCheckedPositionsAstar++;
+		AverageCheckedPositionsAstar = ( AverageCheckedPositionsAstar * NumCallsAstar + checkedPositions ) / ( NumCallsAstar + 1 );
 		if ( checkedPositions > MaxCheckedPositionsAstar )
-		{
 			MaxCheckedPositionsAstar = checkedPositions;
-		}
 	}
 
 	/// <summary>
@@ -56,17 +44,16 @@ public static class MathFunctions
 	/// </summary>
 	public static void ResetStatistics()
 	{
+		NumCallsAstar = 0;
+
 		AverageTimeAstar = 0;
 		MaxTimeAstar = 0;
-		NumMeasuresTimeAstar = 0;
 
-		AveragePathlengthAstar = 0;
-		MaxPathlengthAstar = 0;
-		NumMeasuresPathlengthAstar = 0;
+		AveragePathLengthAstar = 0;
+		MaxPathLengthAstar = 0;
 
 		AverageCheckedPositionsAstar = 0;
 		MaxCheckedPositionsAstar = 0;
-		NumMeasuresCheckedPositionsAstar = 0;
 	}
 
 	/// <summary>
@@ -77,14 +64,14 @@ public static class MathFunctions
 	public static string GetStatistics()
 	{
 		return $"A* statistics:" +
-					$"\nNum calls = {NumMeasuresTimeAstar}" +
+					$"\nNum calls = {NumCallsAstar}" +
 					$"\nAverage time = {AverageTimeAstar} ms" +
 					$"\nMax time = {MaxTimeAstar} ms" +
-					$"\nAverage path length = {AveragePathlengthAstar}" +
-					$"\nMax path length = {MaxPathlengthAstar}" +
+					$"\nAverage path length = {AveragePathLengthAstar}" +
+					$"\nMax path length = {MaxPathLengthAstar}" +
 					$"\nAverage checked positions = {AverageCheckedPositionsAstar}" +
 					$"\nMax checked positions = {MaxCheckedPositionsAstar}" +
-					$"\nRelation path length <-> checked positions = {( AveragePathlengthAstar / AverageCheckedPositionsAstar ).ToString( "f3" )}";
+					$"\nRelation path length <-> checked positions = {( AveragePathLengthAstar / AverageCheckedPositionsAstar ).ToString( "f3" )}";
 		// TODO : Implement direct path statistics
 	}
 
@@ -100,23 +87,48 @@ public static class MathFunctions
 	public delegate bool IsPositionAccessible( Vector2Int position );
 
 	/// <summary>
-	/// <para>Obtains a path from origin to objective reusing the lastPathToObjective if is possible ( if origin and objective exists in path one before the other ).</para>
-	/// <para>If is not possible, uses the method MathFunctions.Pathfinding to calculate a new path. See specific documentation of MathFunctions.Pathfinding for more information.</para>
+	/// <para>Obtains the path from the origin to target.</para>
+	/// <para>First will search a direct path to target and, if is not possible, will use the A* algorithm.</para>
+	/// <para>If the path to target is impossible, returns a path to the position closest to the objective.</para>
+	/// <para>Start position will not be included in result path.</para>
+	/// <para>maxPathLenght will be used only if a direct path to target cannot be found.</para>
 	/// </summary>
 	/// <param name="origin">Start position ( will not be included in result path ).</param>
-	/// <param name="objective">Objective position.</param>
+	/// <param name="target">Objective position.</param>
 	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
-	/// <param name="lastPathToObjective">Last path to objective calculated. Checked for reuse.</param>
-	/// <param name="maxPathLenght">Maximum length of the path if it must be recalculated and cannot be direct.</param>
+	/// <param name="maxCheckedPositions">Maximum number of checked positions for a non-direct path.</param>
 	/// <returns>List of the positions of the best path found. Not includes the origin position.</returns>
-	public static List<Vector2Int> PathfindingWithReusing( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible, List<Vector2Int> lastPathToObjective, int maxPathLenght )
+	public static List<Vector2Int> Pathfinding( Vector2Int origin, Vector2Int target, IsPositionAccessible isPositionAccessible, int maxCheckedPositions )
 	{
+		// First, search direct path
+		List<Vector2Int> path = DirectPath( origin, target, isPositionAccessible );
+
+		// If the direct path not arrives to target, use A*
+		if ( path.Count == 0 || !IsTouchingTarget( path[path.Count - 1], target, isPositionAccessible ) )
+			path = AstarPath( origin, target, isPositionAccessible, maxCheckedPositions );
+
+		return path;
+	}
+
+	/// <summary>
+	/// <para>Obtains a path from origin to target reusing the lastPathToTarget if is possible ( if origin and objective exists in path one before the other ).</para>
+	/// <para>If is not possible, uses the Pathfinding method to calculate a new path. See specific documentation of Pathfinding for more information.</para>
+	/// </summary>
+	/// <param name="origin">Start position ( will not be included in result path ).</param>
+	/// <param name="target">Objective position.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <param name="lastPathToTarget">Last path to objective calculated. Checked for reuse.</param>
+	/// <param name="maxCheckedPositions">Maximum length of the path if it must be recalculated and cannot be direct.</param>
+	/// <returns>List of the positions of the best path found. Not includes the origin position.</returns>
+	public static List<Vector2Int> PathfindingWithReusing( Vector2Int origin, Vector2Int target, IsPositionAccessible isPositionAccessible, List<Vector2Int> lastPathToTarget, int maxCheckedPositions )
+	{
+		// TODO
 		List<Vector2Int> path = new List<Vector2Int>();
 
 		// If any calculated path
-		if ( lastPathToObjective == null || lastPathToObjective.Count == 0 )
+		if ( lastPathToTarget == null || lastPathToTarget.Count == 0 )
 		{
-			path = Pathfinding( origin, objective, isPositionAccessible, maxPathLenght );
+			path = Pathfinding( origin, target, isPositionAccessible, maxCheckedPositions );
 		}
 		// Is some path previously calculated
 		else
@@ -129,9 +141,9 @@ public static class MathFunctions
 			Vector2Int currentposition;
 
 			// Check is the path is clear and if some position is already done
-			for ( pos = 0; pos < lastPathToObjective.Count && isPathClear && !pathContainsObjective; pos++ )
+			for ( pos = 0; pos < lastPathToTarget.Count && isPathClear && !pathContainsObjective; pos++ )
 			{
-				currentposition = lastPathToObjective[pos];
+				currentposition = lastPathToTarget[pos];
 
 				isPathClear = isPositionAccessible( currentposition );
 
@@ -144,177 +156,21 @@ public static class MathFunctions
 				// Check if is target only is origin has been found
 				else
 				{
-					pathContainsObjective = currentposition == objective;
+					pathContainsObjective = currentposition == target;
 				}
 			}
 
 			// If the last path can be used
 			if ( pathContainsOrigin && pathContainsObjective )
 			{
-				path = lastPathToObjective.GetRange( 0, pos - 1 );
+				path = lastPathToTarget.GetRange( 0, pos - 1 );
 			}
 			// If is impossible to reuse path
 			else
 			{
-				path = Pathfinding( origin, objective, isPositionAccessible, maxPathLenght );
+				path = Pathfinding( origin, target, isPositionAccessible, maxCheckedPositions );
 			}
 		}
-
-		return path;
-	}
-
-	/// <summary>
-	/// <para>Obtains the path from the origin to objective.</para>
-	/// <para>First will search a direct path to objective and, if is not possible, will use the A* algorithm.</para>
-	/// <para>If the path to objective is impossible, returns a path to the position closest to the target.</para>
-	/// <para>Start position will not be included in result path.</para>
-	/// <para>maxPathLenght will be used only if a direct path to target cannot be found.</para>
-	/// </summary>
-	/// <param name="origin">Start position ( will not be included in result path ).</param>
-	/// <param name="objective">Objective position.</param>
-	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
-	/// <param name="maxCheckedPositions">Maximum number of checked positions for a non-direct path.</param>
-	/// <returns>List of the positions of the best path found. Not includes the origin position.</returns>
-	public static List<Vector2Int> Pathfinding( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible, int maxCheckedPositions )
-	{
-		// First, search direct path
-		List<Vector2Int> path = DirectPath( origin, objective, isPositionAccessible );
-
-		// If the direct path not arrives to target, use A*
-		if ( path.Count == 0 || !IsTouchingObjective( path[path.Count - 1], objective, isPositionAccessible ) )
-			path = AstarPath( origin, objective, isPositionAccessible, maxCheckedPositions );
-
-		return path;
-	}
-
-	/// <summary>
-	/// Auxiliar class to calculate costs and link positions of a path.
-	/// </summary>
-	protected class PositionInPath
-	{
-		public Vector2Int Position { get; }
-		public float AcummulatedCost { get; }
-		public PositionInPath OriginPosition { get; }
-
-		public PositionInPath( Vector2Int position, float acummulatedCost, PositionInPath originPosition )
-		{
-			Position = position;
-			AcummulatedCost = acummulatedCost;
-			OriginPosition = originPosition;
-		}
-
-		public override bool Equals( object obj )
-		{
-			return obj is PositionInPath && ( (PositionInPath)obj ).Position.Equals( Position );
-		}
-
-		public override int GetHashCode()
-		{
-			return Position.GetHashCode();
-		}
-
-		public override string ToString()
-		{
-			return Position.ToString();
-		}
-	}
-
-	// TODO : Best control of blocked targets
-	/// <summary>
-	/// <para>A* pathfinding algorithm. Calculates the shortest path from origin to target if exists.</para>
-	/// <para>If the number of checked positions is greater than maxCheckedPositions or the objective is not accessible, returns a path to the position closest to the target.</para>
-	/// </summary>
-	/// <param name="origin">Start position ( will not be included in result path ).</param>
-	/// <param name="objective">Objective position.</param>
-	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
-	/// <param name="maxCheckedPositions">Maximum number of checked positions to reach the objective.</param>
-	/// <returns>The best path found from origin to objective.</returns>
-	public static List<Vector2Int> AstarPath( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible, int maxCheckedPositions )
-	{
-		Stopwatch chrono = new Stopwatch();
-		chrono.Start();
-
-		List<Vector2Int> path = new List<Vector2Int>();
-		List<PositionInPath> checkedPositions = new List<PositionInPath>();
-		List<PositionInPath> remainingPositions = new List<PositionInPath>() { new PositionInPath( origin, 0, null ) };
-
-		PositionInPath currentPositionInPath = null;
-		PositionInPath closestToObjective = remainingPositions[0];
-		float closestDistanceToObjective = closestToObjective.Position.Distance( objective );
-		PositionInPath nextPositionInPath;
-		float auxDistance;
-
-		bool destinyNotAccessible = false;
-		bool objectiveReached = false;
-
-		// Calcule path 
-		while ( !objectiveReached && !destinyNotAccessible )
-		{
-			// Select next position
-			currentPositionInPath = remainingPositions[0];
-			foreach ( PositionInPath positionInPath in remainingPositions )
-			{
-				if ( ( positionInPath.Position.Distance( objective ) + positionInPath.AcummulatedCost ) <
-					( currentPositionInPath.Position.Distance( objective ) + currentPositionInPath.AcummulatedCost ) )
-				{
-					currentPositionInPath = positionInPath;
-				}
-			}
-
-			// Remove from remaining and add to checked
-			remainingPositions.Remove( currentPositionInPath );
-			checkedPositions.Add( currentPositionInPath );
-
-			// Check around positions
-			foreach ( Vector2Int movement in EightDirections2D )
-			{
-				nextPositionInPath = new PositionInPath( currentPositionInPath.Position + movement,
-					currentPositionInPath.AcummulatedCost + movement.magnitude,
-					currentPositionInPath );
-
-				// If the position isn't checked and is accessible
-				if ( !checkedPositions.Contains( nextPositionInPath ) && IsPossibleDirection( currentPositionInPath.Position, movement, isPositionAccessible ) )
-				{
-					remainingPositions.Add( nextPositionInPath );
-
-					// Check closest to target
-					auxDistance = nextPositionInPath.Position.Distance( objective );
-					if ( auxDistance < closestDistanceToObjective )
-					{
-						closestToObjective = nextPositionInPath;
-						closestDistanceToObjective = auxDistance;
-					}
-				}
-			}
-
-			// Check end of path
-			if ( IsTouchingObjective( currentPositionInPath.Position, objective, isPositionAccessible ) )
-				objectiveReached = true;
-			else
-				destinyNotAccessible = remainingPositions.Count == 0 || checkedPositions.Count > maxCheckedPositions;
-		}
-
-		// If is impossible to acces to the target use the closest position as desitiny
-		if ( destinyNotAccessible )
-		{
-			currentPositionInPath = closestToObjective;
-		}
-
-		// If the currentPosition ( best last position found ) is closer to target than the origin is a good path
-		if ( currentPositionInPath.Position.Distance( objective ) < origin.Distance( objective ) )
-		{
-			// Do the reverse path, from the end to the origin position
-			while ( currentPositionInPath.Position != origin )
-			{
-				path.Add( currentPositionInPath.Position );
-				currentPositionInPath = currentPositionInPath.OriginPosition;
-			}
-			path.Reverse();
-
-			UpdateAstarStatistics( chrono.ElapsedMilliseconds, path.Count, checkedPositions.Count );
-		}
-
-		chrono.Stop();
 
 		return path;
 	}
@@ -330,7 +186,7 @@ public static class MathFunctions
 	{
 		List<Vector2Int> path = new List<Vector2Int>();
 
-		// TODO : Best control of blocked targets
+		// TODO : Better control of blocked targets
 		if ( !IsObjectiveAccessible( objective, isPositionAccessible ) )
 		{
 			Vector2Int position = origin;
@@ -345,15 +201,167 @@ public static class MathFunctions
 
 				if ( IsPossibleDirection( position, movement, isPositionAccessible ) )
 				{
-					position = position + movement;
+					position += movement;
 					path.Add( position );
 				}
 				else
-				{
 					targetNotAccessible = true;
-				}
 			}
 		}
+
+		return path;
+	}
+
+	/// <summary>
+	/// Auxiliar class to calculate costs and link positions of a A* path.
+	/// </summary>
+	protected class PosInPath
+	{
+		public Vector2Int Pos { get; }
+		public float AccumulatedCost { get; }
+		public PosInPath OriginPos { get; }
+
+		public PosInPath( Vector2Int position, float acummulatedCost, PosInPath originPosition )
+		{
+			Pos = position;
+			AccumulatedCost = acummulatedCost;
+			OriginPos = originPosition;
+		}
+
+		public override bool Equals( object obj )
+		{
+			return obj is PosInPath && ( (PosInPath)obj ).Pos.Equals( Pos );
+		}
+
+		public override int GetHashCode()
+		{
+			return Pos.GetHashCode();
+		}
+
+		public override string ToString()
+		{
+			return Pos.ToString();
+		}
+	}
+
+	// TODO : Better control of blocked targets
+	/// <summary>
+	/// <para>A* pathfinding algorithm. Calculates the shortest path from origin to target if exists.</para>
+	/// <para>If the number of checked positions is greater than maxCheckedPositions or the objective is not accessible, returns a path to the position closest to the target.</para>
+	/// </summary>
+	/// <param name="origin">Start position ( will not be included in result path ).</param>
+	/// <param name="target">Objective position.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <param name="maxCheckedPositions">Maximum number of checked positions to reach the objective.</param>
+	/// <returns>The best path found from origin to objective.</returns>
+	public static List<Vector2Int> AstarPath( Vector2Int origin, Vector2Int target, IsPositionAccessible isPositionAccessible, int maxCheckedPositions )
+	{
+		Stopwatch chrono = new Stopwatch();
+		chrono.Start();
+
+		List<Vector2Int> path = new List<Vector2Int>();
+		Dictionary<Vector2Int, PosInPath> checkedPositions = new Dictionary<Vector2Int, PosInPath>();
+		PosInPath originPosInPath = new PosInPath( origin, 0, null );
+		Dictionary<Vector2Int, PosInPath> remainingPositions = new Dictionary<Vector2Int, PosInPath>
+		{
+			{ originPosInPath.Pos, originPosInPath }
+		};
+
+		bool targetNotAccessible = false;
+		bool targetReached = false;
+
+		PosInPath auxPosInPath;
+		PosInPath currentPosInPath = null;
+		PosInPath closestToObjective = originPosInPath;
+		float closestDistanceToObjective = closestToObjective.Pos.Distance( target );
+		PosInPath nextPosInPath;
+		float distance;
+		
+		bool isAlreadyInRemaining;
+		bool hasBetterAccumulatedCost;		
+
+		// Calcule path
+		while ( !targetReached && !targetNotAccessible )
+		{
+			// Select next position
+			currentPosInPath = null;
+			foreach ( KeyValuePair<Vector2Int, PosInPath> entry in remainingPositions )
+			{
+				auxPosInPath = entry.Value;
+				if ( currentPosInPath == null ||
+					( auxPosInPath.Pos.Distance( target ) + auxPosInPath.AccumulatedCost ) <
+					( currentPosInPath.Pos.Distance( target ) + currentPosInPath.AccumulatedCost ) )
+				{
+					currentPosInPath = auxPosInPath;
+				}
+			}
+
+			// Remove from remaining and add to checked
+			remainingPositions.Remove( currentPosInPath.Pos );
+			checkedPositions.Add( currentPosInPath.Pos, currentPosInPath );
+
+			// Check if already touching target
+			if ( IsTouchingTarget( currentPosInPath.Pos, target, isPositionAccessible ) )
+				targetReached = true;
+			else
+			{
+				// Check around positions
+				foreach ( Vector2Int movement in EightDirections2D )
+				{
+					nextPosInPath = new PosInPath( currentPosInPath.Pos + movement,
+						currentPosInPath.AccumulatedCost + movement.magnitude,
+						currentPosInPath );
+
+					// If the position hasn't been checked previously and is accessible
+					if ( !checkedPositions.ContainsKey( nextPosInPath.Pos ) && IsPossibleDirection( currentPosInPath.Pos, movement, isPositionAccessible ) )
+					{
+						isAlreadyInRemaining = remainingPositions.TryGetValue( nextPosInPath.Pos, out auxPosInPath );
+						hasBetterAccumulatedCost = isAlreadyInRemaining && nextPosInPath.AccumulatedCost < auxPosInPath.AccumulatedCost;
+
+						// If has a better accumulated cost than an existing one in remaining, substitute it
+						if ( hasBetterAccumulatedCost )
+							remainingPositions.Remove( auxPosInPath.Pos );
+
+						// If is a new position or has a better accumulated cost, add to remaining
+						if ( !isAlreadyInRemaining || hasBetterAccumulatedCost )
+						{
+							remainingPositions.Add( nextPosInPath.Pos, nextPosInPath );
+
+							// Check if is the closest to target
+							distance = nextPosInPath.Pos.Distance( target );
+							if ( distance <= closestDistanceToObjective )
+							{
+								closestToObjective = nextPosInPath;
+								closestDistanceToObjective = distance;
+							}
+						}
+					}
+				}
+
+				// Check if target isn't accesible
+				targetNotAccessible = remainingPositions.Count == 0 || checkedPositions.Count > maxCheckedPositions;
+			}
+		}
+
+		// If is impossible acces to the target use the closest position as desitiny
+		if ( targetNotAccessible )
+			currentPosInPath = closestToObjective;
+
+		// If the currentPosition ( best last position found ) is closer to target than the origin is a good path
+		if ( currentPosInPath.Pos.Distance( target ) < origin.Distance( target ) )
+		{
+			// Do the reverse path, from the end to the origin position
+			while ( currentPosInPath.Pos != origin )
+			{
+				path.Add( currentPosInPath.Pos );
+				currentPosInPath = currentPosInPath.OriginPos;
+			}
+			path.Reverse();
+
+			UpdateAstarStatistics( chrono.ElapsedMilliseconds, path.Count, checkedPositions.Count );
+		}
+
+		chrono.Stop();
 
 		return path;
 	}
@@ -408,7 +416,7 @@ public static class MathFunctions
 	/// <param name="objective">Objective position.</param>
 	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
 	/// <returns>If the objective is accesible from the origin position in a single movement.</returns>
-	public static bool IsTouchingObjective( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible )
+	public static bool IsTouchingTarget( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible )
 	{
 		bool isTouching = false;
 

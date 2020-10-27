@@ -41,7 +41,7 @@ public class GameUI : MonoBehaviour
 	#region Function
 
 	protected GameController GameController;
-	protected bool IsWorldObjSelected = false;
+	protected bool IsWorldObjSelected { get => EntitySelected != null || FoodSelected != null; }
 	protected bool IsEntitySelected = false;
 	protected Food FoodSelected;
 	protected Entity EntitySelected;
@@ -50,91 +50,105 @@ public class GameUI : MonoBehaviour
 
 	#endregion
 
+	#region Initialization
+
 	public void Initialize( GameController gameController )
 	{
 		GameController = gameController;
+
+		SetCellToDescribe( null );
 		Map.Initialize();
 	}
+
+	#endregion
+
+	#region Update
 
 	protected void Update()
 	{
 		FpsText.text = $"{Mathf.RoundToInt( 1f / Time.smoothDeltaTime )} FPS";
-
-		if ( IsWorldObjSelected )
-			UpdateWorldObjInfo();
+		UpdateWorldObjInfo();
 	}
 
 	protected void UpdateWorldObjInfo()
 	{
-		EnergyText.text = ( IsEntitySelected ? EntitySelected.Energy : FoodSelected.Energy ).ToString( "f0" );
-
-		if ( IsEntitySelected )
+		if ( IsWorldObjSelected )
 		{
-			SecondsAliveText.text = EntitySelected.SecondsAlive.ToString( "f0" );			
+			EnergyText.text = ( IsEntitySelected ? EntitySelected.Energy : FoodSelected.Energy ).ToString( "f0" );
 
-			EntitySelected.GetState( out bool hasTarget, out bool isSearching, out bool eat, out bool reproduce, out bool isOld );
+			if ( IsEntitySelected )
+			{
+				SecondsAliveText.text = EntitySelected.SecondsAlive.ToString( "f0" );
 
-			Color color;
+				EntitySelected.GetState( out bool hasTarget, out bool isSearching, out bool eat, out bool reproduce, out bool isOld );
 
-			color = IsWalkingImg.color;
-			color.a = !hasTarget ? 1f : DisabledAlpha;
-			IsWalkingImg.color = color;
+				Color color;
 
-			color = IsRunningImg.color;
-			color.a = hasTarget ? 1f : DisabledAlpha;
-			IsRunningImg.color = color;
+				color = IsWalkingImg.color;
+				color.a = !hasTarget ? 1f : DisabledAlpha;
+				IsWalkingImg.color = color;
 
-			color = IsSearchingImg.color;
-			color.a = isSearching ? 1f : DisabledAlpha;
-			IsSearchingImg.color = color;
+				color = IsRunningImg.color;
+				color.a = hasTarget ? 1f : DisabledAlpha;
+				IsRunningImg.color = color;
 
-			color = HasTargetImg.color;
-			color.a = hasTarget ? 1f : DisabledAlpha;
-			HasTargetImg.color = color;
+				color = IsSearchingImg.color;
+				color.a = isSearching ? 1f : DisabledAlpha;
+				IsSearchingImg.color = color;
 
-			color = EatImg.color;
-			color.a = eat ? 1f : DisabledAlpha;
-			EatImg.color = color;
+				color = HasTargetImg.color;
+				color.a = hasTarget ? 1f : DisabledAlpha;
+				HasTargetImg.color = color;
 
-			color = ReproduceImg.color;
-			color.a = reproduce ? 1f : DisabledAlpha;
-			ReproduceImg.color = color;
+				color = EatImg.color;
+				color.a = eat ? 1f : DisabledAlpha;
+				EatImg.color = color;
 
-			color = IsOldImg.color;
-			color.a = isOld ? 1f : DisabledAlpha;
-			IsOldImg.color = color;
+				color = ReproduceImg.color;
+				color.a = reproduce ? 1f : DisabledAlpha;
+				ReproduceImg.color = color;
+
+				color = IsOldImg.color;
+				color.a = isOld ? 1f : DisabledAlpha;
+				IsOldImg.color = color;
+			}
 		}
 	}
 
-	public void SetAutomaticSteping( bool enabled )
-	{
-		PlayPauseIcon.sprite = enabled ? PauseSprite : PlaySprite;
-	}
+	#endregion
+
+	#region External use
 
 	public void SetCellToDescribe( WorldCell cell )
 	{
-		IsWorldObjSelected = cell != null && cell.Content != null;
-		if ( IsWorldObjSelected )
+		if ( cell != null && cell.Content != null )
 		{
-			WorldObjPanel.gameObject.SetActive( true );
 			WorldObjTypeText.text = cell.Content.GetType().Name;
 
 			EntitySelected = cell.Content as Entity;
-			IsEntitySelected = EntitySelected != null;
-			EntityPanel.gameObject.SetActive( IsEntitySelected );
+			FoodSelected = cell.Content as Food;
 
-			if ( !IsEntitySelected )
-				FoodSelected = cell.Content as Food;
-
-			InitializeWorldObjInfo();
+			if ( IsWorldObjSelected )
+			{
+				IsEntitySelected = EntitySelected != null;
+				InitializeWorldObjInfo();
+			}
 		}
 		else
+		{
 			WorldObjPanel.gameObject.SetActive( false );
+			FoodSelected = null;
+			EntitySelected = null;
+		}
 	}
 
 	protected void InitializeWorldObjInfo()
 	{
-		if ( EntitySelected )
+		WorldObjPanel.gameObject.SetActive( true );
+
+		EntityPanel.gameObject.SetActive( IsEntitySelected );
+
+		if ( IsEntitySelected )
 		{
 			IsFemaleImg.enabled = EntitySelected.IsFemale;
 			IsMaleImg.enabled = !EntitySelected.IsFemale;
@@ -148,4 +162,19 @@ public class GameUI : MonoBehaviour
 
 		UpdateWorldObjInfo();
 	}
+
+	public void ToggleAutomaticStepping() => GameController.ToggleAutomaticSteping();
+
+	public void AutomaticStepingToggled( bool enabled ) => PlayPauseIcon.sprite = enabled ? PauseSprite : PlaySprite;
+
+	public void ResetWorld() => GameController.RestartWorld();
+
+	public void ShowStatistics()
+	{
+		Debug.Log( MathFunctions.GetStatistics() );
+	}
+
+	public void ReturnToMain() => GameController.ReturnToMain();
+
+	#endregion
 }

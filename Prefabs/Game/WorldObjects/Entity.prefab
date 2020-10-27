@@ -427,7 +427,7 @@ MonoBehaviour:
   RandomMoveCost: 0
   ConserveDirectionProbability: 50
   SearchCost: -1
-  SearchRadius: 30
+  SearchRadius: 50
   PathToTargetCost: 0
   EatingCost: 0
   MinAndMaxSecondsToGrow: {x: 10, y: 20}

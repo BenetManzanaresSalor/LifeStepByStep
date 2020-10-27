@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class FirstPersonController : LC_FirstPersonController
 {
@@ -44,12 +45,15 @@ public class FirstPersonController : LC_FirstPersonController
 
 	protected void SelectCell()
 	{
-		Vector3 mousePosition = Input.mousePosition;
-		mousePosition.z = Camera.main.nearClipPlane;
+		if ( GameController != null && !EventSystem.current.IsPointerOverGameObject() )
+		{
+			Vector3 mousePosition = Input.mousePosition;
+			mousePosition.z = Camera.main.nearClipPlane;
 
-		Ray ray = Camera.main.ScreenPointToRay( mousePosition );
-		bool isCollision = Physics.Raycast( ray, out RaycastHit hit, 1000 );		
-		GameController.SelectCell( isCollision, hit );
+			Ray ray = Camera.main.ScreenPointToRay( mousePosition );
+			bool isCollision = Physics.Raycast( ray, out RaycastHit hit, 1000 );
+			GameController.SelectCell( isCollision, hit );
+		}
 	}
 
 	protected void ClampPosition()

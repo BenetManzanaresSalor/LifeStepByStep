@@ -31,6 +31,7 @@ public class LC_FirstPersonController : MonoBehaviour
 
 	#region Function attributes
 
+	protected bool IsInitialized = false;
 	protected CharacterController Controller;
 	protected Camera PlayerCamera;
 	protected Transform CameraTransform { get => PlayerCamera.transform; }
@@ -54,6 +55,8 @@ public class LC_FirstPersonController : MonoBehaviour
 
 	public virtual void Initialize()
 	{
+		IsInitialized = true;
+
 		if ( Controller == null )
 			Controller = GetComponent<CharacterController>();
 		if ( PlayerCamera == null )
@@ -66,13 +69,16 @@ public class LC_FirstPersonController : MonoBehaviour
 
 	protected virtual void Update()
 	{
-		IsGrounded = Physics.CheckSphere( SphericGroundCheck.position, SphericGroundCheck.lossyScale.x, WhatIsGround );
+		if ( IsInitialized )
+		{
+			IsGrounded = Physics.CheckSphere( SphericGroundCheck.position, SphericGroundCheck.lossyScale.x, WhatIsGround );
 
-		if ( RotateEnabled )
-			Rotate( ComputeRotation() );
+			if ( RotateEnabled )
+				Rotate( ComputeRotation() );
 
-		if ( MoveEnabled )
-			Move( ComputeVelocity() );
+			if ( MoveEnabled )
+				Move( ComputeVelocity() );
+		}
 	}
 
 	protected virtual Vector3 ComputeRotation()
