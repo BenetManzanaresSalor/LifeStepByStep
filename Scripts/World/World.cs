@@ -27,14 +27,23 @@ public class World : MonoBehaviour
 
 	public GameController GameController { get; protected set; }
 	public WorldTerrain Terrain { get; protected set; }
+	public System.Random RandomGenerator { get; protected set; }
+
 	protected List<Entity> EntitiesList;
+	public int NumEntites { get => EntitiesList.Count; }
+	public int NumBornEntities { get; protected set; }
+	public int NumDeadEntities { get => NumDeadByAgeEntities + NumDeadByEnergyEntities; }
+	public int NumDeadByAgeEntities { get; protected set; }
+	public int NumDeadByEnergyEntities { get; protected set; }
+	protected List<Food> FoodsList;
+	public int NumFoods { get => FoodsList.Count; }
+	public float TotalFoodsEnergy { get; protected set; }
+
 	public bool AutomaticSteping { get; protected set; }
 	public float UpdateIniTime { get; protected set; }
 	protected int EntityIdx = 0;
 
 	public bool TargetRays { get => GameController.TargetRays; }
-
-	public System.Random RandomGenerator { get; protected set; }
 
 	#endregion
 
@@ -55,10 +64,8 @@ public class World : MonoBehaviour
 		RandomGenerator = UseRandomSeed ? new System.Random() : new System.Random( Seed );
 		Terrain.RandomGenerator = RandomGenerator;
 
-		if ( EntitiesList == null )
-			EntitiesList = new List<Entity>();
-		else
-			DestroyAllEntities();
+		ResetAllEntities();
+		ResetAllFoods();
 
 		Terrain.Generate();
 	}
@@ -98,9 +105,15 @@ public class World : MonoBehaviour
 			cell.TrySetContent( worldObj );
 			worldObj.Initialize( this, cell );
 
-			Entity entity = worldObj as Entity;
-			if ( entity != null )
-				NewEntity( entity );
+			switch ( ObjectType )
+			{
+				case 1:
+					NewEntity( worldObj as Entity );
+					break;
+				case 2:
+					NewFood( worldObj as Food );
+					break;
+			}
 		}
 	}
 
@@ -111,32 +124,7 @@ public class World : MonoBehaviour
 	protected virtual void Update()
 	{
 		if ( AutomaticSteping )
-		{
-			UpdateIniTime = Time.realtimeSinceStartup;
-			float numIterations = 0;
-			float averageIterationTime = 0;
-
-			int i;
-			Entity entity;
-			bool isAlive;
-			for ( i = 0; i < EntitiesList.Count && InMaxUpdateTime( averageIterationTime ); i++ )
-			{
-				EntityIdx = EntityIdx % EntitiesList.Count;
-				entity = EntitiesList[EntityIdx];
-				isAlive = entity.Step();
-				if ( !isAlive )
-				{
-					EntityDie( entity );
-					EntitiesList.RemoveAt( EntityIdx );
-					EntityIdx--; // Adjust because of remove
-				}
-
-				EntityIdx = ( EntityIdx + 1 ) % EntitiesList.Count;
-
-				numIterations++;
-				averageIterationTime = ( Time.realtimeSinceStartup - UpdateIniTime ) / numIterations;
-			}
-		}
+			DoSteps();
 	}
 
 	protected virtual bool InMaxUpdateTime( float averageIterationTime )
@@ -144,10 +132,110 @@ public class World : MonoBehaviour
 		return ( Time.realtimeSinceStartup - UpdateIniTime + averageIterationTime ) <= MaxUpdateTime;
 	}
 
-	protected virtual void EntityDie( Entity entity )
+	#endregion
+
+	#region Entities management
+
+	protected void ResetAllEntities()
+	{
+		if ( EntitiesList == null )
+			EntitiesList = new List<Entity>();
+		else
+		{
+			foreach ( Entity entity in EntitiesList )
+				entity.Destroy();
+
+			EntitiesList.Clear();
+		}
+
+		NumBornEntities = 0;
+		NumDeadByEnergyEntities = 0;
+		NumDeadByAgeEntities = 0;
+	}
+
+	public void ToggleAutomaticSteping()
+	{
+		AutomaticSteping = !AutomaticSteping;
+	}
+
+	protected void DoSteps()
+	{
+		UpdateIniTime = Time.realtimeSinceStartup;
+		float numIterations = 0;
+		float averageIterationTime = 0;
+
+		int i;
+		Entity entity;
+		bool isAlive;
+		for ( i = 0; i < EntitiesList.Count && InMaxUpdateTime( averageIterationTime ); i++ )
+		{
+			EntityIdx = EntityIdx % EntitiesList.Count;
+			entity = EntitiesList[EntityIdx];
+			isAlive = entity.Step();
+			if ( !isAlive )
+			{
+				EntitiesList.RemoveAt( EntityIdx );
+				EntityIdx--; // Adjust because of remove
+			}
+
+			EntityIdx = ( EntityIdx + 1 ) % EntitiesList.Count;
+
+			numIterations++;
+			averageIterationTime = ( Time.realtimeSinceStartup - UpdateIniTime ) / numIterations;
+		}
+	}
+
+	public void NewEntity( Entity entity )
+	{
+		EntitiesList.Add( entity );
+		NumBornEntities++;
+	}
+
+	public void EntityDie( Entity entity, bool byAge )
 	{
 		UnityEngine.Debug.Log( $"[DESTROYED] {entity}" );
 		entity.Die();
+
+		if ( byAge )
+			NumDeadByAgeEntities++;
+		else
+			NumDeadByEnergyEntities++;
+	}
+
+	#endregion
+
+	#region Foods management
+
+	protected void ResetAllFoods()
+	{
+		if ( FoodsList == null )
+			FoodsList = new List<Food>();
+		else
+		{
+			foreach ( Food food in FoodsList )
+				food.Destroy();
+
+			FoodsList.Clear();
+		}
+
+		TotalFoodsEnergy = 0;
+	}
+
+	protected void NewFood( Food food )
+	{
+		FoodsList.Add( food );
+		TotalFoodsEnergy += food.BaseEnergy;
+	}
+
+	public void FoodEnergyChange( float energyChange )
+	{
+		TotalFoodsEnergy += energyChange;
+	}
+
+	public void FoodDestroyed( Food food )
+	{
+		FoodsList.Remove( food );
+		food.Destroy();
 	}
 
 	#endregion
@@ -168,24 +256,6 @@ public class World : MonoBehaviour
 	public WorldCell GetClosestCell( Vector3 realPos )
 	{
 		return Terrain.GetCell( realPos );
-	}
-
-	public void ToggleAutomaticSteping()
-	{
-		AutomaticSteping = !AutomaticSteping;
-	}
-
-	public void NewEntity( Entity entity )
-	{
-		EntitiesList.Add( entity );
-	}
-
-	public void DestroyAllEntities()
-	{
-		foreach ( Entity entity in EntitiesList )
-			entity.Destroy();
-
-		EntitiesList.Clear();
 	}
 
 	#endregion

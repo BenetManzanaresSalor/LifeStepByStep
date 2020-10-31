@@ -9,42 +9,50 @@ public class GameUI : MonoBehaviour
 	#region Settings
 
 	[Header( "Control" )]
-	[SerializeField] protected Image PlayPauseIcon;
-	[SerializeField] protected Sprite PlaySprite;
-	[SerializeField] protected Sprite PauseSprite;
-	[SerializeField] protected WorldMap Map;
+	[SerializeField] private Image PlayPauseIcon;
+	[SerializeField] private Sprite PlaySprite;
+	[SerializeField] private Sprite PauseSprite;
+	[SerializeField] private WorldMap Map;
 
 	[Header( "WorldObject info" )]
-	[SerializeField] protected RectTransform WorldObjPanel;
-	[SerializeField] protected TextMeshProUGUI WorldObjTypeText;
-	[SerializeField] protected TextMeshProUGUI EnergyText;
-	[SerializeField] protected RectTransform EntityPanel;
-	[SerializeField] [Range( 0, 1 )] protected float DisabledAlpha = 0.3f;
-	[SerializeField] protected Image IsFemaleImg;
-	[SerializeField] protected Image IsMaleImg;
-	[SerializeField] protected TextMeshProUGUI SecondsAliveText;
-	[SerializeField] protected TextMeshProUGUI NormalSpeedText;
-	[SerializeField] protected TextMeshProUGUI FastSpeedText;
-	[SerializeField] protected Image IsWalkingImg;
-	[SerializeField] protected Image IsRunningImg;
-	[SerializeField] protected Image IsSearchingImg;
-	[SerializeField] protected Image HasTargetImg;
-	[SerializeField] protected Image EatImg;
-	[SerializeField] protected Image ReproduceImg;
-	[SerializeField] protected Image IsOldImg;
+	[SerializeField] private RectTransform WorldObjPanel;
+	[SerializeField] private TextMeshProUGUI WorldObjTypeText;
+	[SerializeField] private TextMeshProUGUI EnergyText;
+	[SerializeField] private RectTransform EntityPanel;
+	[SerializeField] [Range( 0, 1 )] private float DisabledAlpha = 0.3f;
+	[SerializeField] private Image IsFemaleImg;
+	[SerializeField] private Image IsMaleImg;
+	[SerializeField] private TextMeshProUGUI SecondsAliveText;
+	[SerializeField] private TextMeshProUGUI NormalSpeedText;
+	[SerializeField] private TextMeshProUGUI FastSpeedText;
+	[SerializeField] private Image IsWalkingImg;
+	[SerializeField] private Image IsRunningImg;
+	[SerializeField] private Image IsSearchingImg;
+	[SerializeField] private Image HasTargetImg;
+	[SerializeField] private Image EatImg;
+	[SerializeField] private Image ReproduceImg;
+	[SerializeField] private Image IsOldImg;
 
 	[Header( "Analytic" )]
-	[SerializeField] protected TextMeshProUGUI FpsText;
-
+	[SerializeField] private RectTransform AnalyticPanel;
+	[SerializeField] private TextMeshProUGUI FpsText;
+	[SerializeField] private TextMeshProUGUI NumEntitesText;
+	[SerializeField] private TextMeshProUGUI NumBornEntitesText;
+	[SerializeField] private TextMeshProUGUI NumDeadEntitesText;
+	[SerializeField] private TextMeshProUGUI NumFoodsText;
+	[SerializeField] private TextMeshProUGUI FoodsEnergyText;
+	[SerializeField] private TextMeshProUGUI EnergyPerEntityText;
 	#endregion
 
 	#region Function
 
-	protected GameController GameController;
-	protected bool IsWorldObjSelected { get => EntitySelected != null || FoodSelected != null; }
-	protected bool IsEntitySelected = false;
-	protected Food FoodSelected;
-	protected Entity EntitySelected;
+	private GameController GameController;
+	private World World;
+	private WorldObject WorldObjSelected;
+	private Food FoodSelected;
+	private Entity EntitySelected;
+	private bool IsEntitySelected = false;
+	private bool InAnalyticMode;
 
 	#endregion
 
@@ -52,27 +60,29 @@ public class GameUI : MonoBehaviour
 
 	#region Initialization
 
-	public void Initialize( GameController gameController )
+	public void Initialize( GameController gameController, World world )
 	{
 		GameController = gameController;
+		World = world;
 
-		SetCellToDescribe( null );
 		Map.Initialize();
+		WorldObjPanel.gameObject.SetActive( IsWorldObjSelected() );
+		AnalyticPanel.gameObject.SetActive( InAnalyticMode );
 	}
 
 	#endregion
 
 	#region Update
 
-	protected void Update()
+	private void Update()
 	{
-		FpsText.text = $"{Mathf.RoundToInt( 1f / Time.smoothDeltaTime )} FPS";
 		UpdateWorldObjInfo();
+		UpdateAnalyticUI();
 	}
 
-	protected void UpdateWorldObjInfo()
+	private void UpdateWorldObjInfo()
 	{
-		if ( IsWorldObjSelected )
+		if ( IsWorldObjSelected() )
 		{
 			EnergyText.text = ( IsEntitySelected ? EntitySelected.Energy : FoodSelected.Energy ).ToString( "f0" );
 
@@ -113,26 +123,45 @@ public class GameUI : MonoBehaviour
 				IsOldImg.color = color;
 			}
 		}
+		else if ( WorldObjPanel.gameObject.activeInHierarchy )
+		{
+			WorldObjPanel.gameObject.SetActive( false );
+		}
+	}
+
+	private bool IsWorldObjSelected()
+	{
+		bool isSelected = false;
+
+		if ( IsEntitySelected )
+			isSelected = EntitySelected != null && EntitySelected.IsAlive;
+		else
+			isSelected = FoodSelected != null;
+
+		return isSelected;
 	}
 
 	#endregion
 
-	#region External use
+	#region Normal mode
 
 	public void SetCellToDescribe( WorldCell cell )
 	{
+		// Disable select of last object if that exists
+		if ( WorldObjSelected != null )
+			WorldObjSelected.SetSelected( false );
+
 		if ( cell != null && cell.Content != null )
 		{
-			WorldObjTypeText.text = cell.Content.GetType().Name;
+			WorldObjSelected = cell.Content;
+			WorldObjSelected.SetSelected( true );
 
-			EntitySelected = cell.Content as Entity;
-			FoodSelected = cell.Content as Food;
+			EntitySelected = WorldObjSelected as Entity;
+			FoodSelected = WorldObjSelected as Food;
+			IsEntitySelected = EntitySelected != null;
 
-			if ( IsWorldObjSelected )
-			{
-				IsEntitySelected = EntitySelected != null;
+			if ( IsWorldObjSelected() )
 				InitializeWorldObjInfo();
-			}
 		}
 		else
 		{
@@ -142,11 +171,12 @@ public class GameUI : MonoBehaviour
 		}
 	}
 
-	protected void InitializeWorldObjInfo()
+	private void InitializeWorldObjInfo()
 	{
 		WorldObjPanel.gameObject.SetActive( true );
-
 		EntityPanel.gameObject.SetActive( IsEntitySelected );
+
+		WorldObjTypeText.text = WorldObjSelected.GetType().Name;
 
 		if ( IsEntitySelected )
 		{
@@ -169,12 +199,39 @@ public class GameUI : MonoBehaviour
 
 	public void ResetWorld() => GameController.RestartWorld();
 
-	public void ShowStatistics()
+	public void ReturnToMain() => GameController.ReturnToMain();
+
+	#endregion
+
+	#region Analytic mode
+
+	public void ToggleAnalyticMode()
 	{
 		Debug.Log( MathFunctions.GetStatistics() );
+		InAnalyticMode = !InAnalyticMode;
+		AnalyticPanel.gameObject.SetActive( InAnalyticMode );
+
+		if ( InAnalyticMode )
+			UpdateAnalyticUI();
 	}
 
-	public void ReturnToMain() => GameController.ReturnToMain();
+	private void UpdateAnalyticUI()
+	{
+		if ( InAnalyticMode )
+		{
+			FpsText.text = $"{Mathf.RoundToInt( 1f / Time.smoothDeltaTime )} FPS";
+
+			int numEntities = World.NumEntites;
+			NumEntitesText.text = numEntities.ToString();
+			NumBornEntitesText.text = World.NumBornEntities.ToString();
+			NumDeadEntitesText.text = World.NumDeadEntities.ToString();
+
+			NumFoodsText.text = World.NumFoods.ToString();
+			float totalFoodsEnergy = World.TotalFoodsEnergy;
+			FoodsEnergyText.text = totalFoodsEnergy.ToString( "f0" );
+			EnergyPerEntityText.text = ( totalFoodsEnergy / numEntities ).ToString( "f0" );
+		}
+	}
 
 	#endregion
 }

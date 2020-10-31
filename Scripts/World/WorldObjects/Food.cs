@@ -7,9 +7,9 @@ public class Food : WorldObject
 	#region Settings
 
 	[Header( "Food settings" )]
-	[SerializeField] protected float BaseEnergy = 100;
-	[SerializeField] public float SecondsToEat = 10;
-	[SerializeField] [Range( 0, 100 )] protected float RegenerationPercentagePerSecond = 10;
+	[SerializeField] public float BaseEnergy = 300;
+	[SerializeField] public float IterationsToEat = 10;
+	[SerializeField] [Range( 0, 100 )] protected float RegenerationPercentagePerSecond = 5;
 	[SerializeField] protected bool DestroyWhenEmpty = true;
 
 	#endregion
@@ -29,7 +29,7 @@ public class Food : WorldObject
 
 	protected virtual void Start()
 	{
-		InitialLocalScale = transform.localScale;
+		InitialLocalScale = Render.transform.localScale;
 		Energy = BaseEnergy;
 	}
 
@@ -39,24 +39,29 @@ public class Food : WorldObject
 
 	public float GetEnergy()
 	{
-		float obtainedNutrients = BaseEnergy * Time.deltaTime / SecondsToEat;
-		obtainedNutrients = Mathf.Min( obtainedNutrients, Energy );
+		float energyDecrement = 0;
 
-		Energy = Mathf.Clamp( Energy - obtainedNutrients, 0, BaseEnergy );
+		if ( Energy > 0 )
+		{
+			energyDecrement = BaseEnergy * Time.deltaTime / IterationsToEat;
+			energyDecrement = Mathf.Min( energyDecrement, Energy );
+			Energy = Energy - energyDecrement;
+			CurrentWorld.FoodEnergyChange( -energyDecrement );
 
-		if ( Energy == 0 && DestroyWhenEmpty )
-			Destroy();
-		else
-			AdaptScale();
+			if ( Energy == 0 && DestroyWhenEmpty )
+				CurrentWorld.FoodDestroyed( this );
+			else
+				AdaptScale();
+		}
 
-		return obtainedNutrients;
+		return energyDecrement;
 	}
 
 	protected void AdaptScale()
 	{
 		float inverseLerp = Mathf.InverseLerp( 0, BaseEnergy, Energy );
 
-		transform.localScale = InitialLocalScale * inverseLerp;
+		Render.transform.localScale = InitialLocalScale * inverseLerp;
 
 		// Force repositioning to touch floor
 		CellChange( CurrentCell );
@@ -77,7 +82,9 @@ public class Food : WorldObject
 
 	protected virtual void Regenerate()
 	{
-		Energy += Time.deltaTime * BaseEnergy * RegenerationMultiplier;
+		float increment = Time.deltaTime * BaseEnergy * RegenerationMultiplier;
+		Energy += increment;
+		CurrentWorld.FoodEnergyChange( increment );
 	}
 
 	#endregion

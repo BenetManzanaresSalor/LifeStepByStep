@@ -170,7 +170,7 @@ PrefabInstance:
     - target: {fileID: 2248012419888202956, guid: 34a88c5a1209729478a3f9ed8951fc6a,
         type: 3}
       propertyPath: m_RootOrder
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2248012419888202956, guid: 34a88c5a1209729478a3f9ed8951fc6a,
         type: 3}
@@ -268,7 +268,7 @@ PrefabInstance:
     - target: {fileID: 4215105100751685406, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
         type: 3}
       propertyPath: m_RootOrder
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 4215105100751685406, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
         type: 3}
@@ -285,35 +285,55 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7477496099428686047, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
+    - target: {fileID: 2330252553522684439, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
         type: 3}
-      propertyPath: ObstacleProbability
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 7477496099428686047, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
-        type: 3}
-      propertyPath: FoodProbability
-      value: 1.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 7477496099428686047, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
-        type: 3}
-      propertyPath: EntityProbability
-      value: 1.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 7477496099428686044, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
-        type: 3}
-      propertyPath: UseRandomSeed
+      propertyPath: m_textInfo.characterCount
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7477496099428686044, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
+    - target: {fileID: 2330252553522684439, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
         type: 3}
-      propertyPath: Seed
-      value: 1341164126
+      propertyPath: m_textInfo.spaceCount
+      value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7477496099428686044, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
+    - target: {fileID: 2330252553522684439, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
         type: 3}
-      propertyPath: ParallelChunkLoading
-      value: 1
+      propertyPath: m_textInfo.wordCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2330252553522684439, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
+        type: 3}
+      propertyPath: m_textInfo.lineCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2330252553522684439, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
+        type: 3}
+      propertyPath: m_textInfo.pageCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6037910471373630199, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
+        type: 3}
+      propertyPath: m_textInfo.characterCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6037910471373630199, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
+        type: 3}
+      propertyPath: m_textInfo.spaceCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6037910471373630199, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
+        type: 3}
+      propertyPath: m_textInfo.wordCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6037910471373630199, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
+        type: 3}
+      propertyPath: m_textInfo.lineCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6037910471373630199, guid: 166e9b303ae67c6469f4dc378d6ef9eb,
+        type: 3}
+      propertyPath: m_textInfo.pageCount
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 166e9b303ae67c6469f4dc378d6ef9eb, type: 3}

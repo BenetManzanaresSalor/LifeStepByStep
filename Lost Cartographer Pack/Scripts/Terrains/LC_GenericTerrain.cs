@@ -530,16 +530,19 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 			int radius = ChunkRenderDistance + 1;
 
 			Vector2Int topLeftCorner;
-			Vector2Int chunkPos = new Vector2Int();
+			Vector2Int chunkPos = Vector2Int.zero;
 			int yIncrement = 1;
+			int x, y;
+
+			// Incremental radius for ordered chunk loading
 			for ( int currentRadius = 1; currentRadius < radius; currentRadius++ )
 			{
-				topLeftCorner = PlayerChunkPos + Vector2Int.one * -1 * currentRadius;
+				topLeftCorner = PlayerChunkPos - Vector2Int.one * currentRadius;
 
-				for ( int x = 0; x <= currentRadius * 2; x++ )
+				for ( x = 0; x <= currentRadius * 2; x++ )
 				{
 					yIncrement = ( x == 0 || x == currentRadius * 2 ) ? 1 : currentRadius * 2;
-					for ( int y = 0; y <= currentRadius * 2; y += yIncrement )
+					for ( y = 0; y <= currentRadius * 2; y += yIncrement )
 					{
 						chunkPos.x = topLeftCorner.x + x;
 						chunkPos.y = topLeftCorner.y + y;

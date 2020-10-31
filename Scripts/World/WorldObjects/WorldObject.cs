@@ -7,8 +7,10 @@ public class WorldObject : MonoBehaviour
 	#region Settings
 
 	[Header( "World Object settings" )]
+	[SerializeField] protected GameObject Render;
 	[SerializeField] protected float VerticalOffset;
 	[SerializeField] protected float RotationOffset;
+	[SerializeField] protected GameObject SelectedArrow;
 
 	#endregion
 
@@ -45,6 +47,8 @@ public class WorldObject : MonoBehaviour
 	{
 		CurrentWorld = world;
 		CurrentCell = cell;
+
+		SetSelected( false );
 	}
 
 	#endregion
@@ -55,7 +59,7 @@ public class WorldObject : MonoBehaviour
 
 	protected virtual Vector3 CurrentPositionToReal()
 	{
-		return CurrentTerrain.TerrainPosToReal( CurrentCell ) + Vector3.up * ( transform.lossyScale.y / 2 + VerticalOffset );
+		return CurrentTerrain.TerrainPosToReal( CurrentCell ) + Vector3.up * ( Render.transform.lossyScale.y / 2 + VerticalOffset );
 	}
 
 	protected virtual void CellChange( WorldCell newCell )
@@ -75,11 +79,17 @@ public class WorldObject : MonoBehaviour
 
 	#endregion
 
-	#region Auxiliar
+	#region External use
 
 	public override string ToString()
 	{
 		return $"World object in world position {CurrentCell.TerrainPos}";
+	}
+
+	public virtual void SetSelected( bool isSelected )
+	{
+		if ( SelectedArrow != null )
+			SelectedArrow.SetActive( isSelected );
 	}
 
 	#endregion

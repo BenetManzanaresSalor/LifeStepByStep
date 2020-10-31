@@ -59,7 +59,8 @@ public class Entity : WorldObject
 	[Header( "Information render" )]
 	[SerializeField] protected SpriteRenderer FemenineSprite;
 	[SerializeField] protected SpriteRenderer MasculineSprite;
-	[SerializeField] protected SpriteRenderer EnergyBar;
+	[SerializeField] protected Transform EnergyBar;
+	[SerializeField] protected SpriteRenderer EnergyBarSprite;
 	[SerializeField] protected Color GoodEnergyColor = Color.green;
 	[SerializeField] protected Color ProblematicEnergyColor = Color.red;
 	[SerializeField] protected SpriteRenderer IsSearchingSprite;
@@ -78,6 +79,9 @@ public class Entity : WorldObject
 	public bool IsAlive { get; protected set; }
 	public float SecondsAlive { get; protected set; }
 	public float Energy { get; protected set; }
+
+	protected List<EntityAction> ActionsList;
+
 	protected float MovementProgress;
 	public float NormalMoveSeconds { get; protected set; }
 	public float FastMoveDivisor { get; protected set; }
@@ -96,10 +100,11 @@ public class Entity : WorldObject
 		}
 	}
 	protected Vector2Int direction;
-	protected bool TargetAccesible = false;
 
-	protected List<EntityAction> ActionsList;
+	protected bool TargetAccesible = false;
 	public WorldObject Target { get; protected set; }
+	protected WorldObject LastTarget;
+	protected List<Vector2Int> PathToTarget;
 
 	protected System.Random RandomGenerator;
 
@@ -142,7 +147,7 @@ public class Entity : WorldObject
 		FemenineSprite.enabled = IsFemale;
 		MasculineSprite.enabled = !IsFemale;
 
-		transform.localScale = ChildScale.Div( transform.parent.lossyScale );
+		Render.transform.localScale = ChildScale.Div( transform.parent.lossyScale );
 		transform.position = CurrentPositionToReal();
 
 		SecondsToGrow = (float)MathFunctions.RandomDouble( RandomGenerator, MinAndMaxSecondsToGrow );
@@ -151,6 +156,8 @@ public class Entity : WorldObject
 		SecondsToOld = (float)MathFunctions.RandomDouble( RandomGenerator, MinAndMaxSecondsToOld );
 
 		ActionsList = CreateActionsList();
+
+		UpdateStateRenderer();
 	}
 
 	public virtual void Initialize( World world, WorldCell cell, float normalMoveSeconds, float fastMoveDivisor )
@@ -180,7 +187,10 @@ public class Entity : WorldObject
 				{
 					float deathProbabilty = SecondsAlive / SecondsToOld - 1;
 					if ( deathProbabilty > RandomGenerator.NextDouble() * 2 )
+					{
 						IsAlive = false;
+						CurrentWorld.EntityDie( this, true );
+					}
 
 					LastSecondOld = (int)SecondsAlive;
 				}
@@ -470,15 +480,37 @@ public class Entity : WorldObject
 	protected virtual float SearchAndPathToTargetAction()
 	{
 		float cost = SearchCost;
-		List<WorldObject> interestingObjs = new List<WorldObject>();
-		WorldObject closestInterestingObj = null;
-		float closestInterestingObjDistance = float.MaxValue;
+		Target = null;
 
-		WorldObject currentWorldObject;
-		float currentDistance;
-		Vector2Int searchAreaTopLeftCorner = WorldPosition2D + Vector2Int.one * -1 * SearchRadius;
+		WorldObject currentWorldObj;
+		Vector2Int topLeftCorner;
 		Vector2Int position = Vector2Int.zero;
-		for ( int x = 0; x <= SearchRadius * 2; x++ )
+		int radius, x, y, yIncrement;
+
+		// Incremental radius search
+		for ( radius = 1; radius < SearchRadius && Target == null; radius++ )
+		{
+			topLeftCorner = WorldPosition2D - Vector2Int.one * radius;
+
+			for ( x = 0; x <= radius * 2 && Target == null; x++ )
+			{
+				yIncrement = ( x == 0 || x == radius * 2 ) ? 1 : radius * 2;
+				for ( y = 0; y <= radius * 2 && Target == null; y += yIncrement )
+				{
+					position.x = topLeftCorner.x + x;
+					position.y = topLeftCorner.y + y;
+
+					if ( position != WorldPosition2D )
+					{
+						currentWorldObj = CurrentTerrain.GetCellContent( position );
+						if ( IsInterestingObj( currentWorldObj ) )
+							Target = currentWorldObj;
+					}
+				}
+			}
+		}
+
+		/*for ( int x = 0; x <= SearchRadius * 2; x++ )
 		{
 			for ( int y = 0; y <= SearchRadius * 2; y++ )
 			{
@@ -486,27 +518,25 @@ public class Entity : WorldObject
 				position.y = searchAreaTopLeftCorner.y + y;
 				if ( position != WorldPosition2D )
 				{
-					currentWorldObject = CurrentTerrain.GetCellContent( position );
+					currentWorldObj = CurrentTerrain.GetCellContent( position );
 
 					// If the object is interesting
-					if ( IsInterestingObject( currentWorldObject ) )
+					if ( IsInterestingObj( currentWorldObj ) )
 					{
-						interestingObjs.Add( currentWorldObject );
-
 						// If is the closest
 						currentDistance = position.Distance( WorldPosition2D );
 						if ( currentDistance < closestInterestingObjDistance )
 						{
 							closestInterestingObjDistance = currentDistance;
-							closestInterestingObj = currentWorldObject;
+							closestInterestingObj = currentWorldObj;
 						}
 					}
 				}
 			}
 		}
+		Target = closestInterestingObj;*/
 
-		Target = TargetAtInterestingObjects( closestInterestingObj, interestingObjs );
-		if ( Target )
+		if ( Target != null )
 			if ( cost < NullEnergyCost )
 				cost = TryPathToTarget();
 			else
@@ -515,7 +545,7 @@ public class Entity : WorldObject
 		return cost;
 	}
 
-	protected virtual bool IsInterestingObject( WorldObject obj )
+	protected virtual bool IsInterestingObj( WorldObject obj )
 	{
 		bool isInteresting = false;
 
@@ -531,18 +561,18 @@ public class Entity : WorldObject
 		return isInteresting;
 	}
 
-	protected virtual WorldObject TargetAtInterestingObjects( WorldObject closestInterestingObj, List<WorldObject> interestingObjs )
-	{
-		return closestInterestingObj;
-	}
-
 	protected virtual float TryPathToTarget()
 	{
 		float cost = NotActionCost;
 		TargetAccesible = false;
 		bool movementDone = false;
 
-		List<Vector2Int> PathToTarget = MathFunctions.Pathfinding( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, SearchRadius );
+		if ( Target == LastTarget )
+			PathToTarget = MathFunctions.PathfindingWithReusing( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, SearchRadius * 2, PathToTarget );
+		else
+			PathToTarget = MathFunctions.Pathfinding( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, SearchRadius );
+
+		LastTarget = Target;
 
 		// If a path to target is possible
 		if ( PathToTarget.Count > 0 )
@@ -572,7 +602,7 @@ public class Entity : WorldObject
 
 	protected virtual float GrowAction()
 	{
-		transform.localScale = AdultScale;
+		Render.transform.localScale = AdultScale;
 		transform.position = CurrentPositionToReal();
 		IsAdult = true;
 		LastReproductionTime = SecondsAlive;
@@ -604,22 +634,26 @@ public class Entity : WorldObject
 
 	#region Energy and destruction
 
+	protected virtual void IncrementEnergy( float increment )
+	{
+		if ( increment != 0f )
+			SetEnergy( Energy + increment );
+	}
+
 	protected virtual void SetEnergy( float value )
 	{
 		Energy = Mathf.Clamp( value, MinEnergyValue, MaxEnergyValue );
 		if ( Energy > MinEnergyValue )
 		{
-			Vector3 energyBarLocalPos = EnergyBar.transform.localPosition;
-			EnergyBar.transform.localPosition = new Vector3( Mathf.InverseLerp( MinEnergyValue, MaxEnergyValue, Energy ) - 1, energyBarLocalPos.y, energyBarLocalPos.z );
-			EnergyBar.color = HasProblematicEnergy() ? ProblematicEnergyColor : GoodEnergyColor;
+			Vector3 barLocalScale = EnergyBar.transform.localScale;
+			EnergyBar.transform.localScale = new Vector3( Mathf.InverseLerp( MinEnergyValue, MaxEnergyValue, Energy ), barLocalScale.y, barLocalScale.z );
+			EnergyBarSprite.color = HasProblematicEnergy() ? ProblematicEnergyColor : GoodEnergyColor;
 		}
 		else
+		{
 			IsAlive = false;
-	}
-
-	protected virtual void IncrementEnergy( float increment )
-	{
-		SetEnergy( Energy + increment );
+			CurrentWorld.EntityDie( this, false );
+		}
 	}
 
 	public override void Destroy()

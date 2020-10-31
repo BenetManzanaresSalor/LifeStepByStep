@@ -24,10 +24,11 @@ public class GameController : MonoBehaviour
 	#endregion
 
 	#region Initialization
-		
+
 	public void Initialize( MainController mainController )
 	{
 		MainController = mainController;
+
 		RestartWorld();
 	}
 
@@ -46,8 +47,9 @@ public class GameController : MonoBehaviour
 			ToggleAutomaticSteping();
 		if ( Input.GetKeyDown( KeyCode.R ) )
 			RestartWorld();
-		//if ( Input.GetKeyDown( KeyCode.F1 ) ) UI.SetStatus( CurrentWorld.GetStatus() );
-		//if ( Input.GetKeyDown( KeyCode.F2 ) ) CurrentWorld.ResetStatistics();
+		if ( Input.GetKeyDown( KeyCode.Escape ) )
+			ReturnToMain();
+		//if ( Input.GetKeyDown( KeyCode.F1 ) ) UI.SetStatus( CurrentWorld.GetStatus() ); // TODO
 	}
 
 	#endregion
@@ -60,8 +62,9 @@ public class GameController : MonoBehaviour
 			ToggleAutomaticSteping();
 
 		SetPlayerPos( World.transform.position );
+
 		World.Initialize( this, Player.transform );
-		UI.Initialize( this );
+		UI.Initialize( this, World );
 		InitializePlayer();
 	}
 
@@ -112,7 +115,7 @@ public class GameController : MonoBehaviour
 
 		if ( isCollision )
 		{
-			WorldObject worldObj = hit.transform.GetComponent<WorldObject>();
+			WorldObject worldObj = hit.transform.parent.GetComponent<WorldObject>();
 			if ( worldObj != null )
 				cell = worldObj.CurrentCell;
 			else

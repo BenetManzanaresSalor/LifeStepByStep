@@ -8,7 +8,7 @@ public class FirstPersonController : LC_FirstPersonController
 	#region Settings
 
 	[Header( "Clamp position settings" )]
-	[SerializeField] protected float MaxHeight = 100;
+	[SerializeField] protected float MaxOffsetHeight = 50;
 
 	#endregion
 
@@ -29,6 +29,7 @@ public class FirstPersonController : LC_FirstPersonController
 		GameController = gameController;
 
 		GameController.GetTerrainLimits( out MinPosition, out MaxPosition );
+		MaxPosition.y += MaxOffsetHeight;
 	}
 
 	protected override void Update()
