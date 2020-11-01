@@ -33,15 +33,18 @@ public class GameUI : MonoBehaviour
 	[SerializeField] private Image ReproduceImg;
 	[SerializeField] private Image IsOldImg;
 
-	[Header( "Analytic" )]
-	[SerializeField] private RectTransform AnalyticPanel;
+	[Header( "Statistics" )]
+	[SerializeField] private RectTransform StatisticsPanel;
 	[SerializeField] private TextMeshProUGUI FpsText;
 	[SerializeField] private TextMeshProUGUI NumEntitesText;
 	[SerializeField] private TextMeshProUGUI NumBornEntitesText;
 	[SerializeField] private TextMeshProUGUI NumDeadEntitesText;
+	[SerializeField] private TextMeshProUGUI NumDeathsByAgeText;
+	[SerializeField] private TextMeshProUGUI NumDeathsByEnergyText;
 	[SerializeField] private TextMeshProUGUI NumFoodsText;
 	[SerializeField] private TextMeshProUGUI FoodsEnergyText;
 	[SerializeField] private TextMeshProUGUI EnergyPerEntityText;
+
 	#endregion
 
 	#region Function
@@ -67,7 +70,7 @@ public class GameUI : MonoBehaviour
 
 		Map.Initialize();
 		WorldObjPanel.gameObject.SetActive( IsWorldObjSelected() );
-		AnalyticPanel.gameObject.SetActive( InAnalyticMode );
+		StatisticsPanel.gameObject.SetActive( InAnalyticMode );
 	}
 
 	#endregion
@@ -203,13 +206,13 @@ public class GameUI : MonoBehaviour
 
 	#endregion
 
-	#region Analytic mode
+	#region Statistics mode
 
-	public void ToggleAnalyticMode()
+	public void ToggleStatisticsMode()
 	{
 		Debug.Log( MathFunctions.GetStatistics() );
 		InAnalyticMode = !InAnalyticMode;
-		AnalyticPanel.gameObject.SetActive( InAnalyticMode );
+		StatisticsPanel.gameObject.SetActive( InAnalyticMode );
 
 		if ( InAnalyticMode )
 			UpdateAnalyticUI();
@@ -225,11 +228,14 @@ public class GameUI : MonoBehaviour
 			NumEntitesText.text = numEntities.ToString();
 			NumBornEntitesText.text = World.NumBornEntities.ToString();
 			NumDeadEntitesText.text = World.NumDeadEntities.ToString();
+			NumDeathsByAgeText.text = World.NumDeathsByAge.ToString();
+			NumDeathsByEnergyText.text = World.NumDeathsByEnergy.ToString();
 
 			NumFoodsText.text = World.NumFoods.ToString();
 			float totalFoodsEnergy = World.TotalFoodsEnergy;
 			FoodsEnergyText.text = totalFoodsEnergy.ToString( "f0" );
-			EnergyPerEntityText.text = ( totalFoodsEnergy / numEntities ).ToString( "f0" );
+			float energyPerEntity = totalFoodsEnergy / numEntities;
+			EnergyPerEntityText.text = energyPerEntity.ToString( "f0" );
 		}
 	}
 

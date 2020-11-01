@@ -32,9 +32,9 @@ public class World : MonoBehaviour
 	protected List<Entity> EntitiesList;
 	public int NumEntites { get => EntitiesList.Count; }
 	public int NumBornEntities { get; protected set; }
-	public int NumDeadEntities { get => NumDeadByAgeEntities + NumDeadByEnergyEntities; }
-	public int NumDeadByAgeEntities { get; protected set; }
-	public int NumDeadByEnergyEntities { get; protected set; }
+	public int NumDeadEntities { get => NumDeathsByAge + NumDeathsByEnergy; }
+	public int NumDeathsByAge { get; protected set; }
+	public int NumDeathsByEnergy { get; protected set; }
 	protected List<Food> FoodsList;
 	public int NumFoods { get => FoodsList.Count; }
 	public float TotalFoodsEnergy { get; protected set; }
@@ -149,8 +149,8 @@ public class World : MonoBehaviour
 		}
 
 		NumBornEntities = 0;
-		NumDeadByEnergyEntities = 0;
-		NumDeadByAgeEntities = 0;
+		NumDeathsByEnergy = 0;
+		NumDeathsByAge = 0;
 	}
 
 	public void ToggleAutomaticSteping()
@@ -197,9 +197,9 @@ public class World : MonoBehaviour
 		entity.Die();
 
 		if ( byAge )
-			NumDeadByAgeEntities++;
+			NumDeathsByAge++;
 		else
-			NumDeadByEnergyEntities++;
+			NumDeathsByEnergy++;
 	}
 
 	#endregion
