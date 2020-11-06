@@ -25,11 +25,11 @@ public static class MathFunctions
 
 	private static void UpdateAstarStatistics( long time, int pathLength, int checkedPositions )
 	{
-		NumCallsAstar++;
-		AverageTimeAstar = ( AverageTimeAstar * NumCallsAstar + time ) / NumCallsAstar;
-
 		if ( time > MaxTimeAstar )
 			MaxTimeAstar = time;
+
+		NumCallsAstar++;
+		AverageTimeAstar = ( AverageTimeAstar * NumCallsAstar + time ) / NumCallsAstar;		
 
 		AveragePathLengthAstar = ( AveragePathLengthAstar * NumCallsAstar + pathLength ) / NumCallsAstar;
 		if ( pathLength > MaxPathLengthAstar )
@@ -73,7 +73,6 @@ public static class MathFunctions
 					$"\nAverage checked positions = {AverageCheckedPositionsAstar}" +
 					$"\nMax checked positions = {MaxCheckedPositionsAstar}" +
 					$"\nRelation path length <-> checked positions = {( AveragePathLengthAstar / AverageCheckedPositionsAstar ).ToString( "f3" )}";
-		// TODO : Implement direct path statistics
 	}
 
 	#endregion

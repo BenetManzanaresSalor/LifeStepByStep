@@ -210,7 +210,6 @@ public class GameUI : MonoBehaviour
 
 	public void ToggleStatisticsMode()
 	{
-		Debug.Log( MathFunctions.GetStatistics() );
 		InAnalyticMode = !InAnalyticMode;
 		StatisticsPanel.gameObject.SetActive( InAnalyticMode );
 

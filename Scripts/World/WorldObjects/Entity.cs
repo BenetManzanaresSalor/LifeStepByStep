@@ -29,9 +29,6 @@ public class Entity : WorldObject
 
 	#region Settings
 
-	[Header( "Energy" )]
-	[SerializeField] [Range( MinEnergyValue, MaxEnergyValue )] protected float ProblematicEnergyPercentage = 50;
-
 	[Header( "Movement" )]
 	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float Move1msCost = 1.5f;
 	[SerializeField] protected Vector2 MinAndMaxMoveSeconds = new Vector2( 1f, 1.25f );
@@ -41,7 +38,6 @@ public class Entity : WorldObject
 
 	[Header( "Search and target" )]
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float SearchCost = NotActionCost;
-	[SerializeField] protected int SearchRadius = 5;
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float PathToTargetCost = NullEnergyCost;
 	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float EatingCost = 0;
 
@@ -59,16 +55,18 @@ public class Entity : WorldObject
 	[Header( "Information render" )]
 	[SerializeField] protected SpriteRenderer FemenineSprite;
 	[SerializeField] protected SpriteRenderer MasculineSprite;
+	[SerializeField] protected GameObject EnergyBarContainer;
 	[SerializeField] protected Transform EnergyBar;
 	[SerializeField] protected SpriteRenderer EnergyBarSprite;
 	[SerializeField] protected Color GoodEnergyColor = Color.green;
 	[SerializeField] protected Color ProblematicEnergyColor = Color.red;
+	[SerializeField] protected GameObject StateIconsPanel;
 	[SerializeField] protected SpriteRenderer IsSearchingSprite;
 	[SerializeField] protected SpriteRenderer HasTargetSprite;
 	[SerializeField] protected SpriteRenderer EatSprite;
 	[SerializeField] protected SpriteRenderer ReproduceSprite;
 	[SerializeField] protected SpriteRenderer IsOldSprite;
-	[SerializeField] protected LineRenderer TargetLineRenderer;
+	[SerializeField] protected LineRenderer TargetRay;
 	[SerializeField] protected ParticleSystem ReproductionParticles;
 	[SerializeField] protected ParticleSystem DeathParticles;
 
@@ -182,8 +180,8 @@ public class Entity : WorldObject
 			// If is old, has a probabiliy of die
 			if ( IsOld() )
 			{
-				// If is a different second
-				if ( LastSecondOld != (int)SecondsAlive )
+				// If death by age is enabled and is a different second
+				if ( CurrentWorld.DeathByAge && LastSecondOld != (int)SecondsAlive )
 				{
 					float deathProbabilty = SecondsAlive / SecondsToOld - 1;
 					if ( deathProbabilty > RandomGenerator.NextDouble() * 2 )
@@ -240,22 +238,29 @@ public class Entity : WorldObject
 	{
 		GetState( out bool hasTarget, out bool isSearching, out bool eat, out bool reproduce, out bool isOld );
 
-		// State sprites
-		IsSearchingSprite.enabled = isSearching;
-		HasTargetSprite.enabled = hasTarget;
-		EatSprite.enabled = eat;
-		ReproduceSprite.enabled = reproduce;
-		IsOldSprite.enabled = isOld;
+		// Energy bar
+		EnergyBarContainer.gameObject.SetActive( CurrentWorld.ShowEnergyBar );
 
-		// Gizmos
-		if ( hasTarget && CurrentWorld.TargetRays )
+		// State sprites
+		StateIconsPanel.SetActive( CurrentWorld.ShowStateIcons );
+		if ( CurrentWorld.ShowStateIcons )
 		{
-			TargetLineRenderer.enabled = true;
-			TargetLineRenderer.SetPosition( 0, transform.position );
-			TargetLineRenderer.SetPosition( 1, Target.transform.position );
+			IsSearchingSprite.enabled = isSearching;
+			HasTargetSprite.enabled = hasTarget;
+			EatSprite.enabled = eat;
+			ReproduceSprite.enabled = reproduce;
+			IsOldSprite.enabled = isOld;
+		}
+
+		// Target ray
+		if ( hasTarget && CurrentWorld.ShowTargetRays )
+		{
+			TargetRay.enabled = true;
+			TargetRay.SetPosition( 0, transform.position );
+			TargetRay.SetPosition( 1, Target.transform.position );
 		}
 		else
-			TargetLineRenderer.enabled = false;
+			TargetRay.enabled = false;
 	}
 
 	#endregion
@@ -401,7 +406,7 @@ public class Entity : WorldObject
 
 	public virtual bool HasProblematicEnergy()
 	{
-		return Energy < ProblematicEnergyPercentage;
+		return Energy < CurrentWorld.ProblematicEnergyPercentage;
 	}
 
 	public virtual bool CanReproduce()
@@ -488,7 +493,7 @@ public class Entity : WorldObject
 		int radius, x, y, yIncrement;
 
 		// Incremental radius search
-		for ( radius = 1; radius < SearchRadius && Target == null; radius++ )
+		for ( radius = 1; radius < CurrentWorld.SearchRadius && Target == null; radius++ )
 		{
 			topLeftCorner = WorldPosition2D - Vector2Int.one * radius;
 
@@ -568,9 +573,9 @@ public class Entity : WorldObject
 		bool movementDone = false;
 
 		if ( Target == LastTarget )
-			PathToTarget = MathFunctions.PathfindingWithReusing( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, SearchRadius * 2, PathToTarget );
+			PathToTarget = MathFunctions.PathfindingWithReusing( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, CurrentWorld.SearchRadius * 2, PathToTarget );
 		else
-			PathToTarget = MathFunctions.Pathfinding( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, SearchRadius );
+			PathToTarget = MathFunctions.Pathfinding( WorldPosition2D, Target.WorldPosition2D, CurrentTerrain.IsPosAccesible, CurrentWorld.SearchRadius );
 
 		LastTarget = Target;
 

@@ -44,10 +44,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cff646b6081d6c149a1ab0b0bf297d8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Entities:
-  - {fileID: 824840228287763791, guid: 2611a32111a5cfe4181f0535578eb70d, type: 3}
-  Foods:
-  - {fileID: -3144363907454861943, guid: 57f4a5c313301aa40b1fa56af54e78c2, type: 3}
+  Entity: {fileID: 824840228287763791, guid: 2611a32111a5cfe4181f0535578eb70d, type: 3}
+  Food: {fileID: -3144363907454861943, guid: 57f4a5c313301aa40b1fa56af54e78c2, type: 3}
   Obstacles:
   - {fileID: 7744751330611647402, guid: ad7b456410e9f1c4194ed61395cf5853, type: 3}
   MaxUpdateTime: 0.008333334

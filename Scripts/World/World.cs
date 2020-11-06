@@ -9,8 +9,8 @@ public class World : MonoBehaviour
 	#region Settings
 
 	[Header( "World global settings" )]
-	[SerializeField] protected Entity[] Entities;
-	[SerializeField] protected Food[] Foods;
+	[SerializeField] protected Entity Entity;
+	[SerializeField] protected Food Food;
 	[SerializeField] protected WorldObject[] Obstacles;
 	[SerializeField] protected float MaxUpdateTime = 1f / ( 60f * 2f );
 
@@ -20,6 +20,13 @@ public class World : MonoBehaviour
 	[SerializeField] [Range( 0, 100 )] protected float EntityProbability;
 	[SerializeField] [Range( 0, 100 )] protected float FoodProbability;
 	[SerializeField] [Range( 0, 100 )] protected float ObstacleProbability;
+
+	public bool DeathByAge;
+	public bool ShowStateIcons;
+	public bool ShowEnergyBar;
+	public bool ShowTargetRays;
+	public float ProblematicEnergyPercentage = 50;
+	public int SearchRadius = 24;
 
 	#endregion
 
@@ -39,11 +46,9 @@ public class World : MonoBehaviour
 	public int NumFoods { get => FoodsList.Count; }
 	public float TotalFoodsEnergy { get; protected set; }
 
-	public bool AutomaticSteping { get; protected set; }
+	public bool AutomaticSteping;
 	public float UpdateIniTime { get; protected set; }
 	protected int EntityIdx = 0;
-
-	public bool TargetRays { get => GameController.TargetRays; }
 
 	#endregion
 
@@ -87,11 +92,11 @@ public class World : MonoBehaviour
 		{
 			case 1:
 				if ( EntityProbability > MathFunctions.RandomDouble( RandomGenerator, 0, 100 ) )
-					worldObj = Entities[RandomGenerator.Next( 0, Entities.Length )];
+					worldObj = Entity;
 				break;
 			case 2:
 				if ( FoodProbability > MathFunctions.RandomDouble( RandomGenerator, 0, 100 ) )
-					worldObj = Foods[RandomGenerator.Next( 0, Foods.Length )];
+					worldObj = Food;
 				break;
 			case 3:
 				if ( ObstacleProbability > MathFunctions.RandomDouble( RandomGenerator, 0, 100 ) )
@@ -256,6 +261,24 @@ public class World : MonoBehaviour
 	public WorldCell GetClosestCell( Vector3 realPos )
 	{
 		return Terrain.GetCell( realPos );
+	}
+
+	public void SetSettings( bool useRandomSeed, int seed, float[] worldProb, bool[] entityBools, float[] entityValues )
+	{
+		UseRandomSeed = useRandomSeed;
+		Seed = seed;
+
+		EntityProbability = worldProb[0];
+		FoodProbability = worldProb[1];
+		ObstacleProbability = worldProb[2];
+
+		DeathByAge = entityBools[0];
+		ShowStateIcons = entityBools[1];
+		ShowEnergyBar = entityBools[2];
+		ShowTargetRays = entityBools[3];
+
+		ProblematicEnergyPercentage = entityValues[0];
+		SearchRadius = (int)entityValues[1];
 	}
 
 	#endregion

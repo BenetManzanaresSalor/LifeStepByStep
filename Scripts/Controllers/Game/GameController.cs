@@ -7,17 +7,17 @@ public class GameController : MonoBehaviour
 
 	#region Settings
 
-	[SerializeField] protected Vector3 PlayerOffset = Vector3.up;
-	[SerializeField] public bool TargetRays = false;
-	[SerializeField] protected World World;
-	[SerializeField] protected FirstPersonController Player;
-	[SerializeField] protected GameUI UI;
+	[SerializeField] private Vector3 PlayerOffset = Vector3.up;
+	[SerializeField] private World World;
+	[SerializeField] private FirstPersonController Player;
+	[SerializeField] private GameUI UI;
 
 	#endregion
 
 	#region Function
 
-	protected MainController MainController;
+	private MainController MainController;
+	private bool WasAutomaticStepingEnabled = false;
 
 	#endregion
 
@@ -34,22 +34,31 @@ public class GameController : MonoBehaviour
 
 	public void SetEnabled( bool enabled )
 	{
+		// Store automatic steping state
+		if ( !enabled )
+			WasAutomaticStepingEnabled = World.AutomaticSteping;
+
+		World.AutomaticSteping = enabled && WasAutomaticStepingEnabled;
+
 		UI.gameObject.SetActive( enabled );
+
+		this.enabled = enabled;
 	}
 
 	#endregion
 
 	#region World control by interaction
 
-	protected void Update()
+	private void Update()
 	{
 		if ( Input.GetKeyDown( KeyCode.E ) )
 			ToggleAutomaticSteping();
-		if ( Input.GetKeyDown( KeyCode.R ) )
+		else if ( Input.GetKeyDown( KeyCode.R ) )
 			RestartWorld();
-		if ( Input.GetKeyDown( KeyCode.Escape ) )
+		else if ( Input.GetKeyDown( KeyCode.T ) )
+			UI.ToggleStatisticsMode();
+		else if ( Input.GetKeyDown( KeyCode.Escape ) )
 			ReturnToMain();
-		//if ( Input.GetKeyDown( KeyCode.F1 ) ) UI.SetStatus( CurrentWorld.GetStatus() ); // TODO
 	}
 
 	#endregion
@@ -92,13 +101,7 @@ public class GameController : MonoBehaviour
 		SetPlayerPos( World.GetClosestCellRealPos( Player.transform.position ) + PlayerOffset );
 	}
 
-	public void ReturnToMain()
-	{
-		if ( World.AutomaticSteping )
-			ToggleAutomaticSteping();
-
-		MainController.ReturnToMain();
-	}
+	public void ReturnToMain() => MainController.ReturnToMain();
 
 	#endregion
 
@@ -123,6 +126,11 @@ public class GameController : MonoBehaviour
 		}
 
 		UI.SetCellToDescribe( cell );
+	}
+
+	public void ApplySettings( bool useRandomSeed, int seed, float[] worldProb, bool[] entityBools, float[] entityValues )
+	{
+		World.SetSettings( useRandomSeed, seed, worldProb, entityBools, entityValues );
 	}
 
 	#endregion
