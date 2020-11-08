@@ -12,7 +12,7 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 
 	#endregion
 
-	#region Function attributes
+	#region Functional
 
 	protected World World;
 
@@ -22,14 +22,9 @@ public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 
 	#region Initialization
 
-	public override void Generate()
+	public void Generate( World world )
 	{
-		if ( World == null )
-			World = GetComponent<World>();
-
-		if ( Player == null )
-			Player = FindObjectOfType<LC_FirstPersonController>().transform;
-
+		World = world;
 		base.Generate();
 	}
 

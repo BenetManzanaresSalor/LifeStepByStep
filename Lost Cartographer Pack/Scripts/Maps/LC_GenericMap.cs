@@ -81,7 +81,7 @@ public abstract class LC_GenericMap<Terrain, Chunk, Cell> : MonoBehaviour where 
 
 		CurrentCellPosInTex = Vector2Int.zero;
 
-		Vector3Int refPos = TerrainToMap.RealPosToTerrain( TerrainToMap.ChunkPosToReal( TerrainToMap.PlayerChunkPos ) );
+		Vector3Int refPos = TerrainToMap.RealPosToTerrain( TerrainToMap.ChunkPosToReal( TerrainToMap.ReferenceChunkPos ) );
 		ReferencePos.x = refPos.x;
 		ReferencePos.y = refPos.z;
 	}

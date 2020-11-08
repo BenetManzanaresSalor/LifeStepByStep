@@ -8,11 +8,12 @@ public class MainUI : MonoBehaviour
 
 	#region Settings
 
+	[Header( "Global" )]
 	[SerializeField] private RectTransform MainPanel;
 	[SerializeField] private TextMeshProUGUI[] StartButtonTexts;
 	[SerializeField] private RectTransform IntructionsPanel;
 
-	[Header( "Settings" )]
+	[Header( "Settings inputs" )]
 	[SerializeField] private RectTransform SettingsPanel;
 	[SerializeField] private Toggle UseRandomSeedToggle;
 	[SerializeField] private TMP_InputField SeedInputField;
@@ -27,7 +28,7 @@ public class MainUI : MonoBehaviour
 
 	#endregion
 
-	#region Function
+	#region Functional
 
 	private MainController MainController;
 	private bool IsGameStarted = false;

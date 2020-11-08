@@ -47,7 +47,7 @@ public class GameUI : MonoBehaviour
 
 	#endregion
 
-	#region Function
+	#region Functional
 
 	private GameController GameController;
 	private World World;

@@ -6,11 +6,12 @@ public class MainController : MonoBehaviour
 
 	#region Settings
 
+	[Header( "Global" )]
 	[SerializeField] private FirstPersonController Player;
 	[SerializeField] private MainUI UI;
 	[SerializeField] private GameController GameController;
 
-	[Header( "Default game settings" )]
+	[Header( "Default settings" )]
 	[SerializeField] public bool DefaultUseRandomSeed;
 	[SerializeField] public float DefaultSeed;
 	[SerializeField] public float[] DefaultWorldProbs;
@@ -22,7 +23,7 @@ public class MainController : MonoBehaviour
 
 	#endregion
 
-	#region Function
+	#region Functional
 
 	private bool IsGameStarted = false;
 	private bool IsPlaying = false;
@@ -43,6 +44,8 @@ public class MainController : MonoBehaviour
 
 	#endregion
 
+	#region Update
+
 	private void Update()
 	{
 		if ( IsGameStarted && Input.GetKeyDown( KeyCode.Escape ) )
@@ -53,6 +56,8 @@ public class MainController : MonoBehaviour
 				Play();
 		}
 	}
+
+	#endregion
 
 	#region External use
 

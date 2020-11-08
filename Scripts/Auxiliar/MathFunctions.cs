@@ -29,7 +29,7 @@ public static class MathFunctions
 			MaxTimeAstar = time;
 
 		NumCallsAstar++;
-		AverageTimeAstar = ( AverageTimeAstar * NumCallsAstar + time ) / NumCallsAstar;		
+		AverageTimeAstar = ( AverageTimeAstar * NumCallsAstar + time ) / NumCallsAstar;
 
 		AveragePathLengthAstar = ( AveragePathLengthAstar * NumCallsAstar + pathLength ) / NumCallsAstar;
 		if ( pathLength > MaxPathLengthAstar )
@@ -121,8 +121,7 @@ public static class MathFunctions
 	{
 		List<Vector2Int> path = new List<Vector2Int>();
 
-		// TODO : Better control of blocked targets
-		if ( !IsObjectiveAccessible( objective, isPositionAccessible ) )
+		if ( !IsTargetAccessible( objective, isPositionAccessible ) )
 		{
 			Vector2Int position = origin;
 			Vector2Int movement = new Vector2Int();
@@ -148,58 +147,77 @@ public static class MathFunctions
 	}
 
 	/// <summary>
-	/// <para>Obtains a path from origin to target reusing the lastPathToTarget if is possible ( if origin and objective exists in path one before the other ).</para>
-	/// <para>If is not possible, uses the Pathfinding method to calculate a new path. See specific documentation of Pathfinding for more information.</para>
+	/// Checks if the target is accessible by at least one of the surrounding positions ( in eight directions ).
 	/// </summary>
-	/// <param name="origin">Start position ( will not be included in result path ).</param>
 	/// <param name="target">Objective position.</param>
 	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
-	/// <param name="maxCheckedPositions">Maximum length of the path if it must be recalculated and cannot be direct.</param>
-	/// <param name="lastPathToTarget">Last path to objective calculated. Checked for reuse.</param>
-	/// <returns>List of the positions of the best path found. Not includes the origin position.</returns>
-	public static List<Vector2Int> PathfindingWithReusing( Vector2Int origin, Vector2Int target, IsPositionAccessible isPositionAccessible, int maxCheckedPositions, List<Vector2Int> lastPathToTarget )
+	/// <returns>True only if the objective can be accesed by at least one surrounding position.</returns>
+	public static bool IsTargetAccessible( Vector2Int target, IsPositionAccessible isPositionAccessible )
 	{
-		List<Vector2Int> path;
+		bool isAccessible = false;
 
-		// If any calculated path
-		if ( lastPathToTarget == null || lastPathToTarget.Count == 0 )
-		{
-			path = Pathfinding( origin, target, isPositionAccessible, maxCheckedPositions );
-		}
-		// Is some path previously calculated
+		// For all directions, while a acces to the target isn't found
+		for ( int i = 0; i < EightDirections2D.Count && !isAccessible; i++ )
+			isAccessible = IsTouchingTarget( target + EightDirections2D[i], target, isPositionAccessible );
+
+		return isAccessible;
+	}
+
+	/// <summary>
+	/// Checks if the target is accesible from the origin position in a single movement.
+	/// </summary>
+	/// <param name="origin">Original position.</param>
+	/// <param name="target">Objective position.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <returns>If the objective is accesible from the origin position in a single movement.</returns>
+	public static bool IsTouchingTarget( Vector2Int origin, Vector2Int target, IsPositionAccessible isPositionAccessible )
+	{
+		bool isTouching = false;
+
+		if ( origin.Equals( target ) )
+			isTouching = true;
 		else
 		{
-			int idx;
-			bool pathIsClear = true;
-			bool pathTouchsTarget = false;
-			int originPosInPath = -1;
-			Vector2Int pos;
+			Vector2Int offset = target - origin;
 
-			// Check is the path is clear and if some position is already done
-			for ( idx = 0; idx < lastPathToTarget.Count && pathIsClear && !pathTouchsTarget; idx++ )
+			if ( Mathf.Abs( offset.x ) <= 1 && Mathf.Abs( offset.y ) <= 1 )
 			{
-				pos = lastPathToTarget[idx];
+				isTouching = true;
 
-				pathIsClear = isPositionAccessible( pos );
-
-				// TODO : Check if direction is possible
-
-				if ( pathIsClear )
-					pathTouchsTarget = IsTouchingTarget( pos, target, isPositionAccessible );
-
-				// Check if path contains origin to adapt output path
-				if ( pos == origin )
-					originPosInPath = idx;
+				// If is a diagonal
+				if ( offset.x != 0 && offset.y != 0 )
+					isTouching = isPositionAccessible( origin + Vector2Int.right * offset.x ) &&
+						isPositionAccessible( origin + Vector2Int.up * offset.y );
 			}
-
-			// If the last path can be used
-			if ( pathIsClear && pathTouchsTarget )
-				path = lastPathToTarget.GetRange( originPosInPath + 1, idx - 1 );
-			else
-				path = Pathfinding( origin, target, isPositionAccessible, maxCheckedPositions );
 		}
 
-		return path;
+		return isTouching;
+	}
+
+	/// <summary>
+	/// <para>Checks if a movement from a origin with a specific direction ( in some of the eight possible directions ) is possible.</para>
+	/// <para>To check it the method observe the adjacents positions, avoiding a movement that go throught a inaccesible position.</para>
+	/// </summary>
+	/// <param name="origin">Original position.</param>
+	/// <param name="direction">Direction of the movement.</param>
+	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
+	/// <returns>If is a possible direction.</returns>
+	public static bool IsPossibleDirection( Vector2Int origin, Vector2Int direction, IsPositionAccessible isPositionAccessible )
+	{
+		bool possible = true;
+		direction = direction.TransformToDirection();
+
+		Vector2Int[] movementComponents = {
+			origin + Vector2Int.right * direction.x,
+			origin + Vector2Int.up * direction.y,
+			origin + direction
+		};
+
+		for ( int i = 0; i < movementComponents.Length && possible; i++ )
+			if ( !movementComponents[i].Equals( origin ) )
+				possible &= isPositionAccessible( movementComponents[i] );
+
+		return possible;
 	}
 
 	/// <summary>
@@ -234,7 +252,6 @@ public static class MathFunctions
 		}
 	}
 
-	// TODO : Better control of blocked targets
 	/// <summary>
 	/// <para>A* pathfinding algorithm. Calculates the shortest path from origin to target if exists.</para>
 	/// <para>If the number of checked positions is greater than maxCheckedPositions or the objective is not accessible, returns a path to the position closest to the target.</para>
@@ -279,8 +296,8 @@ public static class MathFunctions
 			{
 				auxPosInPath = entry.Value;
 				if ( currentPosInPath == null ||
-					( auxPosInPath.Pos.Distance( target ) + auxPosInPath.AccumulatedCost ) <
-					( currentPosInPath.Pos.Distance( target ) + currentPosInPath.AccumulatedCost ) )
+					( auxPosInPath.AccumulatedCost + auxPosInPath.Pos.Distance( target ) ) <
+					( currentPosInPath.AccumulatedCost + currentPosInPath.Pos.Distance( target ) ) )
 				{
 					currentPosInPath = auxPosInPath;
 				}
@@ -357,77 +374,76 @@ public static class MathFunctions
 	}
 
 	/// <summary>
-	/// Checks if the objective is accessible by at least one of the surrounding positions ( in eight directions ).
+	/// <para>Obtains a path from origin to target reusing the lastPathToTarget if is Possible and Needed.</para>
+	/// <para>Possible = The path is clear and arrives to target.</para>
+	/// <para>Needed = The distance to target is greater than half of maxCheckedPositions.</para>
+	/// <para>Else, uses the Pathfinding method to calculate a new path.</para>
 	/// </summary>
-	/// <param name="objective">Objective position.</param>
-	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
-	/// <returns>True only if the objective can be accesed by at least one surrounding position.</returns>
-	public static bool IsObjectiveAccessible( Vector2Int objective, IsPositionAccessible isPositionAccessible )
-	{
-		bool isAccessible = false;
-
-		// For all directions, while a acces to the target isn't found
-		for ( int i = 0; i < EightDirections2D.Count && !isAccessible; i++ )
-			isAccessible = isPositionAccessible( objective + EightDirections2D[i] );
-
-		return isAccessible;
-	}
-
-	/// <summary>
-	/// <para>Checks if a movement from a origin with a specific direction ( in some of the eight possible directions ) is possible.</para>
-	/// <para>To check it the method observe the adjacents positions, avoiding a movement that go throught a inaccesible position.</para>
-	/// </summary>
-	/// <param name="origin">Original position.</param>
-	/// <param name="direction">Direction of the movement.</param>
-	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
-	/// <returns>If is a possible direction.</returns>
-	public static bool IsPossibleDirection( Vector2Int origin, Vector2Int direction, IsPositionAccessible isPositionAccessible )
-	{
-		bool possible = true;
-		direction = direction.TransformToDirection();
-
-		Vector2Int[] movementComponents = {
-			origin + Vector2Int.right * direction.x,
-			origin + Vector2Int.up * direction.y,
-			origin + direction
-		};
-
-		for ( int i = 0; i < movementComponents.Length && possible; i++ )
-			if ( !movementComponents[i].Equals( origin ) )
-				possible &= isPositionAccessible( movementComponents[i] );
-
-		return possible;
-	}
-
-	/// <summary>
-	/// Checks if the target is accesible from the origin position in a single movement.
-	/// </summary>
-	/// <param name="origin">Original position.</param>
+	/// <param name="origin">Start position ( will not be included in result path ).</param>
 	/// <param name="target">Objective position.</param>
 	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
-	/// <returns>If the objective is accesible from the origin position in a single movement.</returns>
-	public static bool IsTouchingTarget( Vector2Int origin, Vector2Int target, IsPositionAccessible isPositionAccessible )
+	/// <param name="maxCheckedPositions">Maximum length of the path if it must be recalculated and cannot be direct.</param>
+	/// <param name="lastPathToTarget">Last path to objective calculated. Checked for reuse.</param>
+	/// <returns>List of the positions of the best path found. Not includes the origin position.</returns>
+	public static List<Vector2Int> PathfindingWithReusing( Vector2Int origin, Vector2Int target, IsPositionAccessible isPositionAccessible, int maxCheckedPositions, List<Vector2Int> lastPathToTarget )
 	{
-		bool isTouching = false;
+		List<Vector2Int> path;
 
-		if ( origin.Equals( target ) )
-			isTouching = true;
+		// If any calculated path or the target is close
+		if ( lastPathToTarget == null || lastPathToTarget.Count == 0 || origin.Distance( target ) < maxCheckedPositions / 2 )
+		{
+			path = Pathfinding( origin, target, isPositionAccessible, maxCheckedPositions );
+		}
+		// Is some path previously calculated
 		else
 		{
-			Vector2Int direction = target - origin;
+			int idx;
+			bool pathIsClear = true;
+			bool pathTouchsTarget = false;
+			int originIdxInPath = -1;
+			Vector2Int pos;
+			Vector2Int lastPos = Vector2Int.zero;
+			Vector2Int dir;
 
-			if ( Mathf.Abs( direction.x ) <= 1 && Mathf.Abs( direction.y ) <= 1 )
+			// Check is the path is clear and if some position is already done
+			for ( idx = 0; idx < lastPathToTarget.Count && pathIsClear && !pathTouchsTarget; idx++ )
 			{
-				isTouching = true;
+				pos = lastPathToTarget[idx];
 
-				// If is a diagonal
-				if ( direction.x != 0 && direction.y != 0 )
-					isTouching = isPositionAccessible( origin + Vector2Int.right * direction.x ) &&
-						isPositionAccessible( origin + Vector2Int.up * direction.y );
+				// Check if direction is possible
+				if ( idx != 0 )
+				{
+					dir = pos - lastPos;
+					pathIsClear = IsPossibleDirection( lastPos, dir, isPositionAccessible );
+				}
+				lastPos = pos;
+
+				if ( pathIsClear )
+					pathTouchsTarget = IsTouchingTarget( pos, target, isPositionAccessible );
+
+				// Check if path contains origin to adapt output path
+				if ( pos == origin )
+				{
+					originIdxInPath = idx;
+
+					if ( idx < lastPathToTarget.Count - 1 )
+					{
+						dir = lastPathToTarget[idx + 1] - origin;
+						pathIsClear = IsPossibleDirection( origin, dir, isPositionAccessible );
+					}
+					else
+						pathIsClear = false;
+				}
 			}
+
+			// If the last path can be used
+			if ( pathIsClear && pathTouchsTarget )
+				path = lastPathToTarget.GetRange( originIdxInPath + 1, idx - 1 );
+			else
+				path = Pathfinding( origin, target, isPositionAccessible, maxCheckedPositions );
 		}
 
-		return isTouching;
+		return path;
 	}
 
 	#endregion
@@ -507,20 +523,6 @@ public static class MathFunctions
 	public static double RandomDouble( System.Random randomGenerator, Vector2 minInclusiveAndMaxExclusive )
 	{
 		return minInclusiveAndMaxExclusive.x + randomGenerator.NextDouble() * ( minInclusiveAndMaxExclusive.y - minInclusiveAndMaxExclusive.x );
-	}
-
-	#endregion
-
-	#region Common
-
-	/// <summary>
-	/// Checks if a integer is power of two.
-	/// </summary>
-	/// <param name="value">Value to check.</param>
-	/// <returns>If the integer is power of two.</returns>
-	public static bool IsPowerOfTwo( int value )
-	{
-		return ( value != 0 ) && ( ( value & ( value - 1 ) ) == 0 );
 	}
 
 	#endregion

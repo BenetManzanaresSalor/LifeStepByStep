@@ -13,18 +13,22 @@ public class WorldMap : LC_Map<WorldTerrain, LC_Chunk<WorldCell>, WorldCell>
 
 	#endregion
 
+	#region Functional
+
 	protected float HalfColorsPercentatge;
 	protected float SecondHalfColorsPercentatge;
 
 	#endregion
 
-	protected override void Start()
+	#endregion
+
+	public override void Initialize()
 	{
 		int maxColorIdx = Colors.Length - 1;
 		HalfColorsPercentatge = ( ( maxColorIdx - 1 ) / 2 ) / (float)maxColorIdx;
 		SecondHalfColorsPercentatge = ( ( maxColorIdx + 1 ) / 2 ) / (float)maxColorIdx;
 
-		base.Start();
+		base.Initialize();
 	}
 
 	protected override Color32 GetColorPerCell( WorldCell cell )

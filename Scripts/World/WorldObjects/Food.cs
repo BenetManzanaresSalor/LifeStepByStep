@@ -6,7 +6,6 @@ public class Food : WorldObject
 
 	#region Settings
 
-	[Header( "Food settings" )]
 	[SerializeField] public float BaseEnergy = 300;
 	[SerializeField] public float IterationsToEat = 10;
 	[SerializeField] [Range( 0, 100 )] protected float RegenerationPercentagePerSecond = 5;
@@ -14,7 +13,7 @@ public class Food : WorldObject
 
 	#endregion
 
-	#region Function attributes
+	#region Functional
 
 	public float Energy { get; protected set; }
 	protected Vector3 InitialLocalScale;
@@ -35,26 +34,36 @@ public class Food : WorldObject
 
 	#endregion
 
-	#region Nutrients
+	#region Be eaten
 
 	public float GetEnergy()
 	{
-		float energyDecrement = 0;
+		float energyGet = BaseEnergy * Time.deltaTime / IterationsToEat;
+
+		energyGet = -IncrementEnergy( -energyGet );
+
+		return energyGet;
+	}
+
+	protected virtual float IncrementEnergy( float increment )
+	{
+		if ( increment < 0 )
+			increment = -Mathf.Min( -increment, Energy );
+		else
+			increment = Mathf.Min( increment, BaseEnergy - Energy );
+
+		Energy = Energy + increment;
+		CurrentWorld.FoodEnergyChange( increment );
 
 		if ( Energy > 0 )
+			AdaptScale();
+		else if ( DestroyWhenEmpty )
 		{
-			energyDecrement = BaseEnergy * Time.deltaTime / IterationsToEat;
-			energyDecrement = Mathf.Min( energyDecrement, Energy );
-			Energy = Energy - energyDecrement;
-			CurrentWorld.FoodEnergyChange( -energyDecrement );
-
-			if ( Energy == 0 && DestroyWhenEmpty )
-				CurrentWorld.FoodDestroyed( this );
-			else
-				AdaptScale();
+			CurrentWorld.FoodDestroyed( this );
+			Destroy();
 		}
 
-		return energyDecrement;
+		return increment;
 	}
 
 	protected void AdaptScale()
@@ -63,7 +72,7 @@ public class Food : WorldObject
 
 		Render.transform.localScale = InitialLocalScale * inverseLerp;
 
-		// Force repositioning to touch floor
+		// Force repositioning to touch the ground
 		CellChange( CurrentCell );
 	}
 
@@ -74,22 +83,18 @@ public class Food : WorldObject
 	protected virtual void Update()
 	{
 		if ( CurrentWorld.AutomaticSteping && HasToRegenerate )
-		{
 			Regenerate();
-			AdaptScale();
-		}
 	}
 
 	protected virtual void Regenerate()
 	{
 		float increment = Time.deltaTime * BaseEnergy * RegenerationMultiplier;
-		Energy += increment;
-		CurrentWorld.FoodEnergyChange( increment );
+		IncrementEnergy( increment );
 	}
 
 	#endregion
 
-	#region Auxiliar
+	#region External use
 
 	public override string ToString()
 	{

@@ -8,19 +8,21 @@ public class World : MonoBehaviour
 
 	#region Settings
 
-	[Header( "World global settings" )]
-	[SerializeField] protected Entity Entity;
-	[SerializeField] protected Food Food;
-	[SerializeField] protected WorldObject[] Obstacles;
+	[Header( "Global" )]
+	public bool AutomaticSteping;
+	[SerializeField] protected Entity EntityPrefab;
+	[SerializeField] protected Food FoodPrefab;
+	[SerializeField] protected WorldObject[] ObstaclesPrefabs;
 	[SerializeField] protected float MaxUpdateTime = 1f / ( 60f * 2f );
 
-	[Header( "Random world settings" )]
+	[Header( "Random generation" )]
 	[SerializeField] protected bool UseRandomSeed = true;
 	[SerializeField] protected int Seed;
 	[SerializeField] [Range( 0, 100 )] protected float EntityProbability;
 	[SerializeField] [Range( 0, 100 )] protected float FoodProbability;
 	[SerializeField] [Range( 0, 100 )] protected float ObstacleProbability;
 
+	[Header( "Entities" )]
 	public bool DeathByAge;
 	public bool ShowStateIcons;
 	public bool ShowEnergyBar;
@@ -30,25 +32,25 @@ public class World : MonoBehaviour
 
 	#endregion
 
-	#region Function attributes
+	#region Functional
 
 	public GameController GameController { get; protected set; }
 	public WorldTerrain Terrain { get; protected set; }
 	public System.Random RandomGenerator { get; protected set; }
 
 	protected List<Entity> EntitiesList;
+	protected int EntityIdx = 0;
 	public int NumEntites { get => EntitiesList.Count; }
 	public int NumBornEntities { get; protected set; }
 	public int NumDeadEntities { get => NumDeathsByAge + NumDeathsByEnergy; }
 	public int NumDeathsByAge { get; protected set; }
 	public int NumDeathsByEnergy { get; protected set; }
+
 	protected List<Food> FoodsList;
 	public int NumFoods { get => FoodsList.Count; }
 	public float TotalFoodsEnergy { get; protected set; }
 
-	public bool AutomaticSteping;
-	public float UpdateIniTime { get; protected set; }
-	protected int EntityIdx = 0;
+	protected float UpdateIniTime;
 
 	#endregion
 
@@ -63,7 +65,7 @@ public class World : MonoBehaviour
 		if ( Terrain == null )
 		{
 			Terrain = GetComponent<WorldTerrain>();
-			Terrain.Player = player;
+			Terrain.ReferencePos = player;
 		}
 
 		RandomGenerator = UseRandomSeed ? new System.Random() : new System.Random( Seed );
@@ -72,7 +74,7 @@ public class World : MonoBehaviour
 		ResetAllEntities();
 		ResetAllFoods();
 
-		Terrain.Generate();
+		Terrain.Generate( this );
 	}
 
 	public virtual WorldCell CreateCell( int chunkX, int chunkZ, LC_Chunk<WorldCell> chunk )
@@ -80,7 +82,9 @@ public class World : MonoBehaviour
 		float realHeight = Mathf.RoundToInt( chunk.HeightsMap[chunkX + 1, chunkZ + 1] ); // +1 to compensate the offset for normals computation
 		bool isWater = realHeight <= Terrain.WaterHeight;
 		float renderHeight = Mathf.Max( realHeight, Terrain.WaterHeight );
-		return new WorldCell( new Vector2Int( chunk.CellsOffset.x + chunkX, chunk.CellsOffset.y + chunkZ ), renderHeight, realHeight, isWater );
+		Vector2Int pos = new Vector2Int( chunk.CellsOffset.x + chunkX, chunk.CellsOffset.y + chunkZ );
+
+		return new WorldCell( pos, renderHeight, realHeight, isWater );
 	}
 
 	public virtual void CreateWorldObject( LC_Chunk<WorldCell> chunk, WorldCell cell )
@@ -92,15 +96,15 @@ public class World : MonoBehaviour
 		{
 			case 1:
 				if ( EntityProbability > MathFunctions.RandomDouble( RandomGenerator, 0, 100 ) )
-					worldObj = Entity;
+					worldObj = EntityPrefab;
 				break;
 			case 2:
 				if ( FoodProbability > MathFunctions.RandomDouble( RandomGenerator, 0, 100 ) )
-					worldObj = Food;
+					worldObj = FoodPrefab;
 				break;
 			case 3:
 				if ( ObstacleProbability > MathFunctions.RandomDouble( RandomGenerator, 0, 100 ) )
-					worldObj = Obstacles[RandomGenerator.Next( 0, Obstacles.Length )];
+					worldObj = ObstaclesPrefabs[RandomGenerator.Next( 0, ObstaclesPrefabs.Length )];
 				break;
 		}
 
@@ -124,21 +128,6 @@ public class World : MonoBehaviour
 
 	#endregion
 
-	#region Update
-
-	protected virtual void Update()
-	{
-		if ( AutomaticSteping )
-			DoSteps();
-	}
-
-	protected virtual bool InMaxUpdateTime( float averageIterationTime )
-	{
-		return ( Time.realtimeSinceStartup - UpdateIniTime + averageIterationTime ) <= MaxUpdateTime;
-	}
-
-	#endregion
-
 	#region Entities management
 
 	protected void ResetAllEntities()
@@ -158,9 +147,21 @@ public class World : MonoBehaviour
 		NumDeathsByAge = 0;
 	}
 
+	public void NewEntity( Entity entity )
+	{
+		EntitiesList.Add( entity );
+		NumBornEntities++;
+	}
+
 	public void ToggleAutomaticSteping()
 	{
 		AutomaticSteping = !AutomaticSteping;
+	}
+
+	protected virtual void Update()
+	{
+		if ( AutomaticSteping )
+			DoSteps();
 	}
 
 	protected void DoSteps()
@@ -190,16 +191,14 @@ public class World : MonoBehaviour
 		}
 	}
 
-	public void NewEntity( Entity entity )
+	protected virtual bool InMaxUpdateTime( float averageIterationTime )
 	{
-		EntitiesList.Add( entity );
-		NumBornEntities++;
+		return ( Time.realtimeSinceStartup - UpdateIniTime + averageIterationTime ) <= MaxUpdateTime;
 	}
 
 	public void EntityDie( Entity entity, bool byAge )
 	{
 		UnityEngine.Debug.Log( $"[DESTROYED] {entity}" );
-		entity.Die();
 
 		if ( byAge )
 			NumDeathsByAge++;
@@ -217,8 +216,8 @@ public class World : MonoBehaviour
 			FoodsList = new List<Food>();
 		else
 		{
-			foreach ( Food food in FoodsList )
-				food.Destroy();
+			for ( int i = 0; i < FoodsList.Count; i++ )
+				FoodsList[i].Destroy();
 
 			FoodsList.Clear();
 		}
@@ -240,28 +239,11 @@ public class World : MonoBehaviour
 	public void FoodDestroyed( Food food )
 	{
 		FoodsList.Remove( food );
-		food.Destroy();
 	}
 
 	#endregion
 
 	#region External use
-
-	public Vector3 GetClosestCellRealPos( Vector3 realPos )
-	{
-		Vector3 res = Vector3.zero;
-
-		WorldCell cell = GetClosestCell( realPos );
-		if ( cell != null )
-			res = Terrain.TerrainPosToReal( cell );
-
-		return res;
-	}
-
-	public WorldCell GetClosestCell( Vector3 realPos )
-	{
-		return Terrain.GetCell( realPos );
-	}
 
 	public void SetSettings( bool useRandomSeed, int seed, float[] worldProb, bool[] entityBools, float[] entityValues )
 	{
@@ -279,6 +261,22 @@ public class World : MonoBehaviour
 
 		ProblematicEnergyPercentage = entityValues[0];
 		SearchRadius = (int)entityValues[1];
+	}
+
+	public Vector3 GetClosestCellRealPos( Vector3 realPos )
+	{
+		Vector3 res = Vector3.zero;
+
+		WorldCell cell = GetClosestCell( realPos );
+		if ( cell != null )
+			res = Terrain.TerrainPosToReal( cell );
+
+		return res;
+	}
+
+	public WorldCell GetClosestCell( Vector3 realPos )
+	{
+		return Terrain.GetCell( realPos );
 	}
 
 	#endregion

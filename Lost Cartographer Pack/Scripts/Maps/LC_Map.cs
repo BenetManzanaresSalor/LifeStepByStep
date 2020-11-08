@@ -46,7 +46,7 @@ public class LC_Map<Terrain, Chunk, Cell> : LC_GenericMap<Terrain, Chunk, Cell> 
 	/// <returns></returns>
 	protected override Vector2Int GetReferencePos()
 	{
-		Vector3Int pos = TerrainToMap.GetPlayerTerrainPos();
+		Vector3Int pos = TerrainToMap.GetReferenceTerrainPos();
 		return new Vector2Int( pos.x, pos.z );
 	}
 

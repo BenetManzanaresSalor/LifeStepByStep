@@ -61,20 +61,9 @@ public class FirstPersonController : LC_FirstPersonController
 	{
 		Vector3 pos = transform.position;
 
-		if ( pos.x > MaxPosition.x )
-			pos.x = MaxPosition.x;
-		else if ( pos.x < MinPosition.x )
-			pos.x = MinPosition.x;
-
-		if ( pos.y > MaxPosition.y )
-			pos.y = MaxPosition.y;
-		else if ( pos.y < MinPosition.y )
-			pos.y = MinPosition.y;
-
-		if ( pos.z > MaxPosition.z )
-			pos.z = MaxPosition.z;
-		else if ( pos.z < MinPosition.z )
-			pos.z = MinPosition.z;
+		pos.x = LC_Math.Clamp( pos.x, MinPosition.x, MaxPosition.x );
+		pos.y = LC_Math.Clamp( pos.y, MinPosition.y, MaxPosition.y );
+		pos.z = LC_Math.Clamp( pos.z, MinPosition.z, MaxPosition.z );
 
 		transform.position = pos;
 	}

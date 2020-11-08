@@ -8,13 +8,13 @@ public class GameController : MonoBehaviour
 	#region Settings
 
 	[SerializeField] private Vector3 PlayerOffset = Vector3.up;
-	[SerializeField] private World World;
+	[SerializeField] private World CurrentWorld;
 	[SerializeField] private FirstPersonController Player;
 	[SerializeField] private GameUI UI;
 
 	#endregion
 
-	#region Function
+	#region Functional
 
 	private MainController MainController;
 	private bool WasAutomaticStepingEnabled = false;
@@ -36,9 +36,9 @@ public class GameController : MonoBehaviour
 	{
 		// Store automatic steping state
 		if ( !enabled )
-			WasAutomaticStepingEnabled = World.AutomaticSteping;
+			WasAutomaticStepingEnabled = CurrentWorld.AutomaticSteping;
 
-		World.AutomaticSteping = enabled && WasAutomaticStepingEnabled;
+		CurrentWorld.AutomaticSteping = enabled && WasAutomaticStepingEnabled;
 
 		UI.gameObject.SetActive( enabled );
 
@@ -47,7 +47,7 @@ public class GameController : MonoBehaviour
 
 	#endregion
 
-	#region World control by interaction
+	#region Control by keyboard
 
 	private void Update()
 	{
@@ -67,20 +67,20 @@ public class GameController : MonoBehaviour
 
 	public void RestartWorld()
 	{
-		if ( World.AutomaticSteping )
+		if ( CurrentWorld.AutomaticSteping )
 			ToggleAutomaticSteping();
 
-		SetPlayerPos( World.transform.position );
+		SetPlayerPos( CurrentWorld.transform.position );
 
-		World.Initialize( this, Player.transform );
-		UI.Initialize( this, World );
+		CurrentWorld.Initialize( this, Player.transform );
+		UI.Initialize( this, CurrentWorld );
 		InitializePlayer();
 	}
 
 	public void ToggleAutomaticSteping()
 	{
-		World.ToggleAutomaticSteping();
-		UI.AutomaticStepingToggled( World.AutomaticSteping );
+		CurrentWorld.ToggleAutomaticSteping();
+		UI.AutomaticStepingToggled( CurrentWorld.AutomaticSteping );
 	}
 
 	protected void SetPlayerPos( Vector3 pos )
@@ -98,7 +98,7 @@ public class GameController : MonoBehaviour
 	protected void InitializePlayer()
 	{
 		Player.Initialize( this );
-		SetPlayerPos( World.GetClosestCellRealPos( Player.transform.position ) + PlayerOffset );
+		SetPlayerPos( CurrentWorld.GetClosestCellRealPos( Player.transform.position ) + PlayerOffset );
 	}
 
 	public void ReturnToMain() => MainController.ReturnToMain();
@@ -109,7 +109,7 @@ public class GameController : MonoBehaviour
 
 	public void GetTerrainLimits( out Vector3 minPos, out Vector3 maxPos )
 	{
-		World.Terrain.GetTerrainLimits( out minPos, out maxPos );
+		CurrentWorld.Terrain.GetTerrainLimits( out minPos, out maxPos );
 	}
 
 	public void SelectCell( bool isCollision, RaycastHit hit )
@@ -122,7 +122,7 @@ public class GameController : MonoBehaviour
 			if ( worldObj != null )
 				cell = worldObj.CurrentCell;
 			else
-				cell = World.GetClosestCell( hit.point );
+				cell = CurrentWorld.GetClosestCell( hit.point );
 		}
 
 		UI.SetCellToDescribe( cell );
@@ -130,7 +130,7 @@ public class GameController : MonoBehaviour
 
 	public void ApplySettings( bool useRandomSeed, int seed, float[] worldProb, bool[] entityBools, float[] entityValues )
 	{
-		World.SetSettings( useRandomSeed, seed, worldProb, entityBools, entityValues );
+		CurrentWorld.SetSettings( useRandomSeed, seed, worldProb, entityBools, entityValues );
 	}
 
 	#endregion

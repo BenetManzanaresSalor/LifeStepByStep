@@ -36,7 +36,7 @@ public class Entity : WorldObject
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float RandomMoveCost = NullEnergyCost;
 	[SerializeField] [Range( 0, 100 )] protected int ConserveDirectionProbability = 50;
 
-	[Header( "Search and target" )]
+	[Header( "Searching and pathfinding" )]
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float SearchCost = NotActionCost;
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float PathToTargetCost = NullEnergyCost;
 	[SerializeField] [Range( NullEnergyCost, MaxEnergyValue )] protected float EatingCost = 0;
@@ -72,12 +72,12 @@ public class Entity : WorldObject
 
 	#endregion
 
-	#region Function attributes
+	#region Functional
 
 	public bool IsAlive { get; protected set; }
 	public float SecondsAlive { get; protected set; }
 	public float Energy { get; protected set; }
-
+	protected System.Random RandomGenerator;
 	protected List<EntityAction> ActionsList;
 
 	protected float MovementProgress;
@@ -91,7 +91,8 @@ public class Entity : WorldObject
 		protected set
 		{
 			direction = value;
-			transform.rotation = Quaternion.Euler( 0, RotationOffset, 0 );
+
+			transform.rotation = Quaternion.identity;
 
 			if ( direction != Vector2Int.zero )
 				transform.rotation *= Quaternion.LookRotation( new Vector3( direction.x, 0, direction.y ) );
@@ -104,12 +105,9 @@ public class Entity : WorldObject
 	protected WorldObject LastTarget;
 	protected List<Vector2Int> PathToTarget;
 
-	protected System.Random RandomGenerator;
-
 	protected float SecondsToGrow;
 	public bool IsAdult { get; protected set; }
 	public bool IsFemale { get; protected set; }
-
 	protected float ReproductionCooldown;
 	protected float LastReproductionTime;
 	protected bool IsPregnant = false;
@@ -176,62 +174,11 @@ public class Entity : WorldObject
 		if ( IsAlive )
 		{
 			SecondsAlive += Time.deltaTime;
-
-			// If is old, has a probabiliy of die
-			if ( IsOld() )
-			{
-				// If death by age is enabled and is a different second
-				if ( CurrentWorld.DeathByAge && LastSecondOld != (int)SecondsAlive )
-				{
-					float deathProbabilty = SecondsAlive / SecondsToOld - 1;
-					if ( deathProbabilty > RandomGenerator.NextDouble() * 2 )
-					{
-						IsAlive = false;
-						CurrentWorld.EntityDie( this, true );
-					}
-
-					LastSecondOld = (int)SecondsAlive;
-				}
-			}
-
-			// If still alive
-			if ( IsAlive )
-			{
-				IncrementEnergy( -DoAction() );
-				UpdateStateRenderer();
-			}
+			IncrementEnergy( -DoAction() );
+			UpdateStateRenderer();
 		}
 
 		return IsAlive;
-	}
-
-	public virtual bool IsOld()
-	{
-		return SecondsAlive > SecondsToOld;
-	}
-
-	public virtual void GetState( out bool hasTarget, out bool isSearching, out bool eat, out bool reproduce, out bool isOld )
-	{
-		hasTarget = HasTarget();
-		isSearching = !hasTarget && HasToSearch();
-
-		if ( hasTarget )
-		{
-			eat = Target is Food;
-			reproduce = Target is Entity;
-		}
-		else if ( isSearching )
-		{
-			eat = HasToEat();
-			reproduce = !eat && HasToReproduce();
-		}
-		else
-		{
-			eat = false;
-			reproduce = false;
-		}
-
-		isOld = IsOld();
 	}
 
 	protected virtual void UpdateStateRenderer()
@@ -263,6 +210,30 @@ public class Entity : WorldObject
 			TargetRay.enabled = false;
 	}
 
+	public virtual void GetState( out bool hasTarget, out bool isSearching, out bool eat, out bool reproduce, out bool isOld )
+	{
+		hasTarget = HasTarget();
+		isSearching = !hasTarget && HasToSearch();
+
+		if ( hasTarget )
+		{
+			eat = Target is Food;
+			reproduce = Target is Entity;
+		}
+		else if ( isSearching )
+		{
+			eat = HasToEat();
+			reproduce = !eat && HasToReproduce();
+		}
+		else
+		{
+			eat = false;
+			reproduce = false;
+		}
+
+		isOld = IsOld();
+	}
+
 	#endregion
 
 	#region Actions
@@ -270,6 +241,7 @@ public class Entity : WorldObject
 	protected virtual List<EntityAction> CreateActionsList()
 	{
 		return new List<EntityAction>() {
+			new EntityAction( IsOld, MaybeDeathByAge ),
 			new EntityAction( HasToGiveBirth, GiveBirthAction ),
 			new EntityAction( HasToMove, MoveAction ),
 			new EntityAction( HasToInteractWithTarget, InteractWithTargetAction ),
@@ -305,6 +277,30 @@ public class Entity : WorldObject
 		Direction = newCell.TerrainPos - WorldPosition2D;
 		OriginPosition = CurrentPositionToReal();
 	}
+
+	#region Death by age
+
+	public virtual bool IsOld()
+	{
+		return SecondsAlive > SecondsToOld;
+	}
+
+	protected virtual float MaybeDeathByAge()
+	{
+		// If death by age is enabled and is a different second
+		if ( CurrentWorld.DeathByAge && LastSecondOld != (int)SecondsAlive )
+		{
+			float deathProbabilty = SecondsAlive / SecondsToOld - 1;
+			if ( deathProbabilty > RandomGenerator.NextDouble() * 2 )
+				Die( true );
+
+			LastSecondOld = (int)SecondsAlive;
+		}
+
+		return IsAlive ? NotActionCost : NullEnergyCost;
+	}
+
+	#endregion
 
 	#region Give birth
 
@@ -637,11 +633,11 @@ public class Entity : WorldObject
 
 	#endregion
 
-	#region Energy and destruction
+	#region Energy and death
 
 	protected virtual void IncrementEnergy( float increment )
 	{
-		if ( increment != 0f )
+		if ( increment != 0 )
 			SetEnergy( Energy + increment );
 	}
 
@@ -656,19 +652,16 @@ public class Entity : WorldObject
 		}
 		else
 		{
-			IsAlive = false;
-			CurrentWorld.EntityDie( this, false );
+			Die( false );
 		}
 	}
 
-	public override void Destroy()
+	public virtual void Die( bool byAge )
 	{
 		IsAlive = false;
-		base.Destroy();
-	}
 
-	public virtual void Die()
-	{
+		CurrentWorld.EntityDie( this, byAge );
+
 		ParticleSystem particles = Instantiate( DeathParticles, this.transform.position, Quaternion.identity );
 		Destroy( particles.gameObject, particles.main.duration );
 
@@ -677,7 +670,7 @@ public class Entity : WorldObject
 
 	#endregion
 
-	#region Auxiliar
+	#region External use
 
 	public override string ToString()
 	{

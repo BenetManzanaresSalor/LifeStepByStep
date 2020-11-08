@@ -46,8 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PlayerOffset: {x: 0, y: 15, z: 0}
-  TargetRays: 0
-  World: {fileID: 7477496099428686047}
+  CurrentWorld: {fileID: 7477496099428686047}
   Player: {fileID: 0}
   UI: {fileID: 785376454756212079}
 --- !u!1001 &2954506089685012442

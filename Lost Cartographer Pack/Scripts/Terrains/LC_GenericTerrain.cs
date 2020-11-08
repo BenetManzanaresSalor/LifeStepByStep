@@ -17,8 +17,8 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	[Tooltip( "If the terrain is generated in Start method." )]
 	protected bool GenerateAtStart = true;
 	[SerializeField]
-	[Tooltip( "The player used as reference position for generate the terrain.\nAlways required, including if DynamicChunkLoading is disabled." )]
-	public Transform Player;
+	[Tooltip( "The reference position for generate the terrain.\nAlways required, including if DynamicChunkLoading is disabled." )]
+	public Transform ReferencePos;
 	[SerializeField]
 	[Tooltip( "Scale of each cell of the terrain." )]
 	public Vector3 CellSize = Vector3.one;
@@ -29,14 +29,14 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	[Range( 1, 8 )]
 	public int ChunkSizeLevel = 4;
 	[SerializeField]
-	[Tooltip( "Distance from the player to a chunk required to load it, defined as number of chunks.\nAlong with ChunkSizeLevel, defines the final render distance." )]
+	[Tooltip( "Distance from the reference to a chunk required to load it, defined as number of chunks.\nAlong with ChunkSizeLevel, defines the final render distance." )]
 	[Range( 0, 64 )]
 	public int ChunkRenderDistance = 8;
 	[SerializeField]
 	[Tooltip( "If the chunks have MeshCollider.\nIt can affect significantly to the performance." )]
 	public bool HasCollider = true;
 	[SerializeField]
-	[Tooltip( "If the chunks are loaded around the player when he moves." )]
+	[Tooltip( "If the chunks are loaded around the reference when it moves." )]
 	public bool DynamicChunkLoading = true;
 	[SerializeField]
 	[Tooltip( "If use parallel Tasks to speed up chunk loading." )]
@@ -58,7 +58,7 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	public bool IsGenerated { get; protected set; }
 	public int ChunkSize { get; protected set; }
 	public Vector3 CurrentRealPos { get; protected set; }    // Equivalent to transform.position. Required for parallel chunk mesh loading.
-	public Vector2Int PlayerChunkPos { get; protected set; }
+	public Vector2Int ReferenceChunkPos { get; protected set; }
 	public Vector3 HalfChunk { get; protected set; }
 	public float ChunkRenderRealDistance { get; protected set; }
 	public Dictionary<Vector2Int, Chunk> CurrentChunks { get; protected set; }
@@ -101,7 +101,7 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 		ChunksLoadingForMap = new Dictionary<Vector2Int, Chunk>();
 		ChunksForMap = new Dictionary<Vector2Int, Chunk>();
 
-		PlayerChunkPos = RealPosToChunk( Player.position );
+		ReferenceChunkPos = RealPosToChunk( ReferencePos.position );
 
 		DestroyTerrain();
 		IniTerrain();
@@ -162,17 +162,17 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	}
 
 	/// <summary>
-	/// <para>Generates a new terrain around the player with square shape.</para>
+	/// <para>Generates a new terrain around the reference with square shape.</para>
 	/// <para>If DynamicChunkLoading is enabled the square shape is substituted using the ChunkRenderDistance.</para>
-	/// <para>If ParallelChunkLoading is enabled the chunks around the player need to be build at Update method.</para>
+	/// <para>If ParallelChunkLoading is enabled the chunks around the reference need to be build at Update method.</para>
 	/// </summary>
 	protected virtual void IniTerrain()
 	{
-		// Always load the current player chunk
-		LoadChunk( PlayerChunkPos, true );
+		// Always load the current reference chunk
+		LoadChunk( ReferenceChunkPos, true );
 
 		// Load the other chunks
-		foreach ( Vector2Int chunkPos in LC_Math.AroundPositions( PlayerChunkPos, ChunkRenderDistance ) )
+		foreach ( Vector2Int chunkPos in LC_Math.AroundPositions( ReferenceChunkPos, ChunkRenderDistance ) )
 			LoadChunk( chunkPos );
 
 		IsGenerated = true;
@@ -338,7 +338,7 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 
 			// Update useful variables
 			CurrentRealPos = transform.position;    // Required for parallel functions and others
-			PlayerChunkPos = RealPosToChunk( Player.position ); // Required for DynamicChunkLoading
+			ReferenceChunkPos = RealPosToChunk( ReferencePos.position ); // Required for DynamicChunkLoading
 			ChunkRenderRealDistance = ChunkRenderDistance * ChunkSize * Mathf.Max( CellSize.x, CellSize.z );    // Required for DynamicChunkLoading
 
 			// Check chunks loaded parallelly (if remains time)
@@ -347,8 +347,8 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 
 			if ( DynamicChunkLoading )
 			{
-				// Load the current player chunk if isn't loaded
-				CheckPlayerCurrentChunk();
+				// Load the current reference chunk if isn't loaded
+				CheckReferenceCurrentChunk();
 
 				// Update chunks required (if remains time)
 				if ( InMaxUpdateTime() )
@@ -358,26 +358,26 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	}
 
 	/// <summary>
-	/// <para>Checks the player current chunk, that always has to be build.</para>
+	/// <para>Checks the reference current chunk, that always has to be build.</para>
 	/// <para>If is loading, waits for it to load and then build it.</para>
 	/// <para>If it isn't loaded, loads it.</para>
 	/// </summary>
-	protected virtual void CheckPlayerCurrentChunk()
+	protected virtual void CheckReferenceCurrentChunk()
 	{
 		Monitor.Enter( ChunksLoadingLock );
 
-		if ( !CurrentChunks.ContainsKey( PlayerChunkPos ) && !ChunksLoaded.ContainsKey( PlayerChunkPos ) )
+		if ( !CurrentChunks.ContainsKey( ReferenceChunkPos ) && !ChunksLoaded.ContainsKey( ReferenceChunkPos ) )
 		{
-			bool isLoading = ChunksLoading.TryGetValue( PlayerChunkPos, out Chunk playerChunk );
+			bool isLoading = ChunksLoading.TryGetValue( ReferenceChunkPos, out Chunk referenceChunk );
 			Monitor.Exit( ChunksLoadingLock );
 			if ( isLoading )
 			{
-				playerChunk.ParallelTask.Wait();  // Wait parallel loading to end
+				referenceChunk.ParallelTask.Wait();  // Wait parallel loading to end
 				BuildParallelyLoadedChunks();    // Built the chunk (and the others if are required)
 			}
 			else
 			{
-				LoadChunk( PlayerChunkPos, true );    // Ignore parallel because is impossible continue playing without this chunk
+				LoadChunk( ReferenceChunkPos, true );    // Ignore parallel because is impossible continue playing without this chunk
 			}
 		}
 		else
@@ -449,7 +449,7 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	}
 
 	/// <summary>
-	/// <para>Manages the chunks required and the current chunks using the player position.</para>
+	/// <para>Manages the chunks required and the current chunks using the reference position.</para>
 	/// <para>If a chunk is required and not loaded, it loads it (or starts the load if ParallelChunkLoading is enabled).</para>
 	/// <para>If a chunk is not required, destroy it.</para>
 	/// <para>Moreover, when is loading the chunks required, it uses the InMaxUpdateTime method, breaking the loop if the MaxUpdateTime is exceeded.</para>
@@ -514,7 +514,7 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	}
 
 	/// <summary>
-	/// <para>Calculate the chunks required dynamically using the player position and the ChunkRenderDistance.</para>
+	/// <para>Calculate the chunks required dynamically using the reference position and the ChunkRenderDistance.</para>
 	/// <para>Returns a dictionary instead of a list for performance reasons.</para>
 	/// </summary>
 	/// <returns></returns>
@@ -522,8 +522,8 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	{
 		Dictionary<Vector2Int, object> chunksRequired = new Dictionary<Vector2Int, object>();
 
-		// Always load the player current chunk		
-		chunksRequired.Add( PlayerChunkPos, null );
+		// Always load the reference current chunk		
+		chunksRequired.Add( ReferenceChunkPos, null );
 
 		if ( ChunkRenderDistance > 0 )
 		{
@@ -537,7 +537,7 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 			// Incremental radius for ordered chunk loading
 			for ( int currentRadius = 1; currentRadius < radius; currentRadius++ )
 			{
-				topLeftCorner = PlayerChunkPos - Vector2Int.one * currentRadius;
+				topLeftCorner = ReferenceChunkPos - Vector2Int.one * currentRadius;
 
 				for ( x = 0; x <= currentRadius * 2; x++ )
 				{
@@ -547,8 +547,8 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 						chunkPos.x = topLeftCorner.x + x;
 						chunkPos.y = topLeftCorner.y + y;
 
-						// If isn't PlayerChunkPos (because is always loaded) and is required
-						if ( chunkPos != PlayerChunkPos && IsChunkRequired( chunkPos ) )
+						// If isn't ReferenceChunkPos (because is always loaded) and is required
+						if ( chunkPos != ReferenceChunkPos && IsChunkRequired( chunkPos ) )
 							chunksRequired.Add( chunkPos, null );
 					}
 				}
@@ -614,7 +614,7 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 	#region Auxiliar
 
 	/// <summary>
-	/// Checks if a chunk is required using the player position, chunk position, and the ChunkRenderDistance.
+	/// Checks if a chunk is required using the reference position, chunk position, and the ChunkRenderDistance.
 	/// </summary>
 	/// <param name="chunkPos">Position of the chunk.</param>
 	/// <returns></returns>
@@ -624,22 +624,22 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 
 		if ( DynamicChunkLoading )
 		{
-			isrequired = chunkPos == PlayerChunkPos;
+			isrequired = chunkPos == ReferenceChunkPos;
 
-			// If isn't the player current chunk
+			// If isn't the reference current chunk
 			if ( !isrequired )
 			{
 				Vector3 chunkRealPosition = ChunkPosToReal( chunkPos );
-				Vector3 offsetToPlayer = chunkRealPosition - Player.position;
-				offsetToPlayer.y = 0; // Ignore height offset
+				Vector3 offsetToReference = chunkRealPosition - ReferencePos.position;
+				offsetToReference.y = 0; // Ignore height offset
 
-				isrequired = offsetToPlayer.magnitude <= ChunkRenderRealDistance;
+				isrequired = offsetToReference.magnitude <= ChunkRenderRealDistance;
 			}
 		}
 		else
 		{
-			Vector2Int distanceToPlayer = new Vector2Int( Mathf.Abs( PlayerChunkPos.x - chunkPos.x ), Mathf.Abs( PlayerChunkPos.y - chunkPos.y ) );
-			isrequired = distanceToPlayer.x <= ChunkRenderDistance && distanceToPlayer.y <= ChunkRenderDistance;
+			Vector2Int distanceToReference = new Vector2Int( Mathf.Abs( ReferenceChunkPos.x - chunkPos.x ), Mathf.Abs( ReferenceChunkPos.y - chunkPos.y ) );
+			isrequired = distanceToReference.x <= ChunkRenderDistance && distanceToReference.y <= ChunkRenderDistance;
 		}
 
 		return isrequired;
@@ -680,9 +680,9 @@ public abstract class LC_GenericTerrain<Chunk, Cell> : MonoBehaviour where Chunk
 		return new Vector3Int( Mathf.RoundToInt( relativePos.x / CellSize.x ), Mathf.RoundToInt( relativePos.y / CellSize.y ), Mathf.RoundToInt( relativePos.z / CellSize.z ) );
 	}
 
-	public virtual Vector3Int GetPlayerTerrainPos()
+	public virtual Vector3Int GetReferenceTerrainPos()
 	{
-		return RealPosToTerrain( Player.position );
+		return RealPosToTerrain( ReferencePos.position );
 	}
 
 	public virtual Vector2Int TerrainPosToChunk( Vector2Int terrainPos )
