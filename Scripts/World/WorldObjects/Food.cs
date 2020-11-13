@@ -1,5 +1,10 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// <para>Food consumed eaten by entities to obtain energy.</para>
+/// <para>Child of WorldObject.</para>
+/// <para>Controlled by World.</para>
+/// </summary>
 public class Food : WorldObject
 {
 	#region Attributes

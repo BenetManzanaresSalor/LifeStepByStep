@@ -1,5 +1,10 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// <para>Defines a object of the World.</para>
+/// <para>Parent of the Entity and Food classes.</para>
+/// <para>Controlled by World.</para>
+/// </summary>
 public class WorldObject : MonoBehaviour
 {
 	#region Attributes

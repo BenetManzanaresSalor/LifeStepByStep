@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 
-
+/// <summary>
+/// <para>Manages the behavior of the game, controlling: World, GameUI and FirstPersonController.</para>
+/// <para>Controlled by MainController.</para>
+/// </summary>
 public class GameController : MonoBehaviour
 {
 	#region Attributes
@@ -8,9 +11,9 @@ public class GameController : MonoBehaviour
 	#region Settings
 
 	[SerializeField] private Vector3 PlayerOffset = Vector3.up;
-	[SerializeField] private World CurrentWorld;
-	[SerializeField] private FirstPersonController Player;
+	[SerializeField] private World CurrentWorld;	
 	[SerializeField] private GameUI UI;
+	[SerializeField] private FirstPersonController Player;
 
 	#endregion
 

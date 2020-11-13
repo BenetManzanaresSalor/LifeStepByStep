@@ -2,11 +2,16 @@
 using System.Diagnostics;
 using UnityEngine;
 
+/// <summary>
+/// Math helper class. Includes A* pathfinding.
+/// </summary>
 public static class MathFunctions
 {
 	#region Constants
 
+	/// <summary>List with the four basic directions (North, East, South and West)</summary>
 	public static readonly List<Vector2Int> FourDirections2D = new List<Vector2Int> { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
+	/// <summary>List with the eight basic directions (North, NorthEast, East, SouthEast, South, SouthWest, West and NorthWest)</summary>
 	public static readonly List<Vector2Int> EightDirections2D = new List<Vector2Int>
 		{ Vector2Int.up, Vector2Int.up + Vector2Int.right, Vector2Int.right, Vector2Int.right + Vector2Int.down, Vector2Int.down,
 		Vector2Int.down + Vector2Int.left, Vector2Int.left,  Vector2Int.left + Vector2Int.up };
@@ -41,7 +46,8 @@ public static class MathFunctions
 	}
 
 	/// <summary>
-	/// Reset all the current statistics of MathFunctions.
+	/// <para>Reset all the current statistics of MathFunctions.</para>
+	/// <para>Includes: A*</para>
 	/// </summary>
 	public static void ResetStatistics()
 	{
@@ -59,9 +65,8 @@ public static class MathFunctions
 
 	/// <summary>
 	/// <para>Get a string with the current MathFunctions statistics.</para>
-	/// <para>Includes: A* </para>
+	/// <para>Includes: A*</para>
 	/// </summary>
-	/// <returns>String with the statistics info.</returns>
 	public static string GetStatistics()
 	{
 		return $"A* statistics:" +
@@ -80,20 +85,20 @@ public static class MathFunctions
 	#region Pathfinding
 
 	/// <summary>
-	/// Method that checks if a position is accessible.
+	/// Checks if a position is accessible.
 	/// </summary>
 	/// <param name="position">Position to check.</param>
 	/// <returns>If the position is accessible.</returns>
 	public delegate bool IsPositionAccessible( Vector2Int position );
 
 	/// <summary>
-	/// <para>Obtains the path from the origin to target.</para>
-	/// <para>First will search a direct path to target and, if is not possible, will use the A* algorithm.</para>
+	/// <para>Tries to get a path from the origin to the target.</para>
+	/// <para>First will search a direct path to target and, if it is not possible, will use the A* algorithm.</para>
 	/// <para>If the path to target is impossible, returns a path to the position closest to the objective.</para>
 	/// <para>Start position will not be included in result path.</para>
 	/// <para>maxPathLenght will be used only if a direct path to target cannot be found.</para>
 	/// </summary>
-	/// <param name="origin">Start position ( will not be included in result path ).</param>
+	/// <param name="origin">Start position (will not be included in result path).</param>
 	/// <param name="target">Objective position.</param>
 	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
 	/// <param name="maxCheckedPositions">Maximum number of checked positions for a non-direct path.</param>
@@ -111,12 +116,12 @@ public static class MathFunctions
 	}
 
 	/// <summary>
-	/// <para>Calculates the direct path ( straight or diagonal line ) if is possible or return a incomplete path.</para>
+	/// <para>Calculates the direct path (straight or diagonal line) if is possible or return a incomplete path.</para>
 	/// </summary>
-	/// <param name="origin">Start position ( will not be included in result path ).</param>
+	/// <param name="origin">Start position (will not be included in result path).</param>
 	/// <param name="objective">Objective position.</param>
 	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
-	/// <returns>A direct path to objective if is possible, or a incomplete path instead.</returns>
+	/// <returns>A direct path to objective if is possible, or an incomplete path instead.</returns>
 	public static List<Vector2Int> DirectPath( Vector2Int origin, Vector2Int objective, IsPositionAccessible isPositionAccessible )
 	{
 		List<Vector2Int> path = new List<Vector2Int>();
@@ -164,7 +169,8 @@ public static class MathFunctions
 	}
 
 	/// <summary>
-	/// Checks if the target is accesible from the origin position in a single movement.
+	/// <para>Checks if the target is accesible from the origin position in a single movement (in eight directions)</para>
+	/// <para>If is a diagonal movement, checks the accessibility of the left and right positions.</para>
 	/// </summary>
 	/// <param name="origin">Original position.</param>
 	/// <param name="target">Objective position.</param>
@@ -195,8 +201,8 @@ public static class MathFunctions
 	}
 
 	/// <summary>
-	/// <para>Checks if a movement from a origin with a specific direction ( in some of the eight possible directions ) is possible.</para>
-	/// <para>To check it the method observe the adjacents positions, avoiding a movement that go throught a inaccesible position.</para>
+	/// <para>Checks if a movement from a origin with a specific direction (in some of the eight directions) is possible.</para>
+	/// <para>To check it the method observe the adjacents positions, avoiding a movement that go throught an inaccesible positions.</para>
 	/// </summary>
 	/// <param name="origin">Original position.</param>
 	/// <param name="direction">Direction of the movement.</param>
@@ -254,13 +260,13 @@ public static class MathFunctions
 
 	/// <summary>
 	/// <para>A* pathfinding algorithm. Calculates the shortest path from origin to target if exists.</para>
-	/// <para>If the number of checked positions is greater than maxCheckedPositions or the objective is not accessible, returns a path to the position closest to the target.</para>
+	/// <para>If the number of checked positions is greater than maxCheckedPositions or the objective is not accessible, returns a path to the closest position found.</para>
 	/// </summary>
-	/// <param name="origin">Start position ( will not be included in result path ).</param>
+	/// <param name="origin">Start position (will not be included in result path).</param>
 	/// <param name="target">Objective position.</param>
 	/// <param name="isPositionAccessible">Method to check if a position is accessible.</param>
 	/// <param name="maxCheckedPositions">Maximum number of checked positions to reach the objective.</param>
-	/// <returns>The best path found from origin to objective.</returns>
+	/// <returns>The best path found from origin to target.</returns>
 	public static List<Vector2Int> AstarPath( Vector2Int origin, Vector2Int target, IsPositionAccessible isPositionAccessible, int maxCheckedPositions )
 	{
 		Stopwatch chrono = new Stopwatch();
@@ -421,18 +427,11 @@ public static class MathFunctions
 				if ( pathIsClear )
 					pathTouchsTarget = IsTouchingTarget( pos, target, isPositionAccessible );
 
-				// Check if path contains origin to adapt output path
+				// Check if path contains origin in order to adapt output path
 				if ( pos == origin )
 				{
 					originIdxInPath = idx;
-
-					if ( idx < lastPathToTarget.Count - 1 )
-					{
-						dir = lastPathToTarget[idx + 1] - origin;
-						pathIsClear = IsPossibleDirection( origin, dir, isPositionAccessible );
-					}
-					else
-						pathIsClear = false;
+					pathIsClear = idx != lastPathToTarget.Count - 1; // Can't be the last position of the path
 				}
 			}
 
@@ -451,23 +450,24 @@ public static class MathFunctions
 	#region Random generation
 
 	/// <summary>
-	/// <para>Calculates a pseudo-random direction based on last direction and probability.</para>
-	/// <para>If the selected direction is impossible, choose other randomly.</para>
-	/// <para>If any direction is possible, returns Vector2Int.zero.</para>
+	/// <para>Calculates a pseudo-random direction based on lastDirection and probability.</para>
+	/// <para>If the probability is less than sameDirectionProbability it will compute a diferent direction.</para>
+	/// <para>It will test alternate directions trying to minimize the turn from the lastDirection.</para>
+	/// <para>If no direction is possible, returns Vector2Int.zero.</para>
 	/// </summary>
 	/// <param name="origin">Original position.</param>
 	/// <param name="lastDirection">Last direction. Must be a normalized vector.</param>
 	/// <param name="randGenerator">Random generator for the direction.</param>
 	/// <param name="sameDirectionProbability">Probability of conserve the lastDirection.</param>
 	/// <param name="isPositionAccessible">>Method to check if a position is accessible.</param>
-	/// <returns>The new direction or, if any is possible, Vector2Int.zero.</returns>
-	public static Vector2Int PseudorandomDirection( Vector2Int origin, Vector2Int lastDirection, System.Random randGenerator, int sameDirectionProbability, IsPositionAccessible isPositionAccessible )
+	/// <returns>The new direction or, if no one is possible, Vector2Int.zero.</returns>
+	public static Vector2Int PseudorandomDirection( Vector2Int origin, Vector2Int lastDirection, System.Random randGenerator, float sameDirectionProbability, IsPositionAccessible isPositionAccessible )
 	{
 		Vector2Int nextDirection = Vector2Int.zero;
 		lastDirection = lastDirection.TransformToDirection();
 
-		int sameDirectionProb = Mathf.Clamp( sameDirectionProbability, 0, 100 );
-		bool useSameDirection = randGenerator.Next( 0, 100 ) <= sameDirectionProb;
+		float sameDirectionProb = Mathf.Clamp( sameDirectionProbability, 0, 100 );
+		bool useSameDirection = RandomDouble( randGenerator, 0, 100 ) <= sameDirectionProb;
 
 		// If is possible continue in the same direction ( not 0,0 )
 		if ( useSameDirection && !lastDirection.Equals( Vector2Int.zero ) && IsPossibleDirection( origin, lastDirection, isPositionAccessible ) )
@@ -515,14 +515,20 @@ public static class MathFunctions
 		return nextDirection;
 	}
 
+	/// <summary>
+	/// Computes a random double between the minimum value (included) and the maximum value (not included)
+	/// </summary>
 	public static double RandomDouble( System.Random randomGenerator, double minInclusive, double maxExclusive )
 	{
 		return minInclusive + randomGenerator.NextDouble() * ( maxExclusive - minInclusive );
 	}
 
+	/// <summary>
+	/// Computes a random double between the minimum value (first position of the vector, included) and the maximum value (second position of the vector, not included)
+	/// </summary>
 	public static double RandomDouble( System.Random randomGenerator, Vector2 minInclusiveAndMaxExclusive )
 	{
-		return minInclusiveAndMaxExclusive.x + randomGenerator.NextDouble() * ( minInclusiveAndMaxExclusive.y - minInclusiveAndMaxExclusive.x );
+		return RandomDouble( randomGenerator, minInclusiveAndMaxExclusive.x, minInclusiveAndMaxExclusive.y );
 	}
 
 	#endregion
@@ -530,20 +536,18 @@ public static class MathFunctions
 	#region Extended methods
 
 	/// <summary>
-	/// Obtains the euclidean distance from current vector to other position.
+	/// Computes the euclidean distance from position a to position b.
 	/// </summary>
 	/// <param name="a">Current position.</param>
 	/// <param name="b">Other position.</param>
-	/// <returns>The euclidean distance between positions.</returns>
 	public static float Distance( this Vector2Int a, Vector2Int b )
 	{
 		return ( b - a ).magnitude;
 	}
 
 	/// <summary>
-	/// Transforms current vector to a discrete direction ( values in range [-1,1] ).
+	/// Transforms current vector to a discrete direction ( integer values in range [-1, 1] ).
 	/// </summary>
-	/// <param name="vector">Vector transformed to direction.</param>
 	public static Vector2Int TransformToDirection( this Vector2Int vector )
 	{
 		vector.x = Mathf.Clamp( vector.x, -1, 1 );
@@ -552,6 +556,9 @@ public static class MathFunctions
 		return vector;
 	}
 
+	/// <summary>
+	/// Computes the component-per-component division between the vector a and vector b.
+	/// </summary>
 	public static Vector3 Div( this Vector3 a, Vector3 b )
 	{
 		return new Vector3( a.x / b.x, a.y / b.y, a.z / b.z );

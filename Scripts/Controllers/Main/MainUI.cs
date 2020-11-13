@@ -2,6 +2,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// <para>Controls the main menu UI, including instructions and settings panels.</para>
+/// <para>Controlled by MainController.</para>
+/// </summary>
 public class MainUI : MonoBehaviour
 {
 	#region Attributes
@@ -56,7 +60,7 @@ public class MainUI : MonoBehaviour
 		if ( !IsGameStarted )
 		{
 			foreach ( TextMeshProUGUI textMesh in StartButtonTexts )
-				textMesh.text = "Continue [ESC]";
+				textMesh.text = "Continue (Esc)";
 
 			IsGameStarted = true;
 		}

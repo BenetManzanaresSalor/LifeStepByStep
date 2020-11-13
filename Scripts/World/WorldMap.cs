@@ -1,5 +1,10 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// <para>Maps to texture the content of WorldTerrain.</para>
+/// <para>Child of Lost Cartographer Pack map (LC_Map)</para>
+/// <para>Controlled by GameUI.</para>
+/// </summary>
 public class WorldMap : LC_Map<WorldTerrain, LC_Chunk<WorldCell>, WorldCell>
 {
 	#region Attributes

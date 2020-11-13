@@ -2,26 +2,44 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct EntityAction
-{
-	public Func<bool> Conditions;
-	public Func<float> Method;
 
-	public EntityAction( Func<bool> conditions, Func<float> method )
-	{
-		Conditions = conditions;
-		Method = method;
-	}
-}
 
+/// <summary>
+/// <para>Main actuator of the world, able of move, grow, search, do pathfinding, eat, reproduce and die by age.</para>
+/// <para>Child of WorldObject.</para>
+/// <para>Controlled by World.</para>
+/// </summary>
 public class Entity : WorldObject
 {
+	#region EntityAction sctruct
+
+	/// <summary>
+	/// <para>Struct created to define an action of the Entity.</para>
+	/// <para>An action is represented by a Condition (function which returns bool) and Method (function which returns float, the cost)</para>
+	/// </summary>
+	protected struct EntityAction
+	{
+		public Func<bool> Condition;
+		public Func<float> Method;
+
+		public EntityAction( Func<bool> condition, Func<float> method )
+		{
+			Condition = condition;
+			Method = method;
+		}
+	}
+
+	#endregion
+
 	#region Constants
 
+	// Energy
 	protected const float MaxEnergyValue = 100;
 	protected const float MinEnergyValue = 0;
-	protected const float NullEnergyCost = 0;
-	protected const float NotActionCost = NullEnergyCost - 1;
+
+	// Actions costs
+	protected const float NotActionCost = -1;   // The entity can do more actions after an action with this cost or less.
+	protected const float NullEnergyCost = 0;	// The entity cannot do more actions after an action with this cost or grater.	
 
 	#endregion
 
@@ -34,7 +52,7 @@ public class Entity : WorldObject
 	[SerializeField] protected Vector2 MinAndMaxMoveSeconds = new Vector2( 1f, 1.25f );
 	[SerializeField] protected Vector2 MinAndMaxFastMoveDivisor = new Vector2( 1f, 3f );
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float RandomMoveCost = NullEnergyCost;
-	[SerializeField] [Range( 0, 100 )] protected int ConserveDirectionProbability = 50;
+	[SerializeField] [Range( 0, 100 )] protected float ConserveDirectionProbability = 80;
 
 	[Header( "Searching and pathfinding" )]
 	[SerializeField] [Range( NotActionCost, MaxEnergyValue )] protected float SearchCost = NotActionCost;
@@ -254,16 +272,16 @@ public class Entity : WorldObject
 	public virtual float DoAction()
 	{
 		float cost = NullEnergyCost;
-		bool actionDone = false;
+		bool canDoMoreActions = false;
 		EntityAction action;
 
-		for ( int i = 0; i < ActionsList.Count && !actionDone; i++ )
+		for ( int i = 0; i < ActionsList.Count && !canDoMoreActions; i++ )
 		{
 			action = ActionsList[i];
-			if ( action.Conditions() )
+			if ( action.Condition() )
 			{
 				cost = action.Method();
-				actionDone = cost >= NullEnergyCost;
+				canDoMoreActions = cost >= NullEnergyCost;
 			}
 		}
 

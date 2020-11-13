@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Manages the behavior of all the aplicaction, controlling: MainUI, GameController and FirstPersonController.
+/// </summary>
 public class MainController : MonoBehaviour
 {
 	#region Attributes

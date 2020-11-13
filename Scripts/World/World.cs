@@ -1,6 +1,10 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// <para>Controls the world, including WorldTerrain and world objects (mainly entities and foods).</para>
+/// <para>Controlled by GameController.</para>
+/// </summary>
 [RequireComponent( typeof( WorldTerrain ) )]
 public class World : MonoBehaviour
 {

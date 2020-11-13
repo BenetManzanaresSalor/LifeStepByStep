@@ -2,6 +2,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// <para>Controls the game UI, including bottom, world object and statistics panels.</para>
+/// <para>In bottom panel, it also initializes WorldMap.</para>
+/// <para>Controlled by GameController.</para>
+/// </summary>
 public class GameUI : MonoBehaviour
 {
 	#region Attributes

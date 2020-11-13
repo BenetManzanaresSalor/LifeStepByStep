@@ -530,17 +530,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Render: {fileID: 3063646838293524841}
-  VerticalOffset: 0
-  RotationOffset: 0
   SelectedArrow: {fileID: 1792519755092240801}
-  ProblematicEnergyPercentage: 50
   Move1msCost: 1.5
   MinAndMaxMoveSeconds: {x: 1, y: 1.75}
   MinAndMaxFastMoveDivisor: {x: 1, y: 3}
   RandomMoveCost: 0
-  ConserveDirectionProbability: 50
+  ConserveDirectionProbability: 80
   SearchCost: -1
-  SearchRadius: 24
   PathToTargetCost: 0
   EatingCost: 0
   MinAndMaxSecondsToGrow: {x: 10, y: 20}

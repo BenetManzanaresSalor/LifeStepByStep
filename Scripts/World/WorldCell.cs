@@ -1,5 +1,9 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// <para>Defines each cell of WorldTerrain.</para>
+/// <para>Controlled by WorldTerrain.</para>
+/// </summary>
 public class WorldCell : LC_Cell
 {
 	#region Attributes

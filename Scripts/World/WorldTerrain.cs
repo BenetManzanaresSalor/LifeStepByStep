@@ -1,6 +1,11 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// <para>Generates and control the terrain of the game.</para>
+/// <para>Child of Lost Cartographer Pack cubic terrain (LC_CubeTerrain)</para>
+/// <para>Controlled by World.</para>
+/// </summary>
 [RequireComponent( typeof( World ) )]
 public class WorldTerrain : LC_CubeTerrain<LC_Chunk<WorldCell>, WorldCell>
 {

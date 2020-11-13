@@ -1,6 +1,12 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
+/// <summary>
+/// <para>Controls the player camera and body movement.</para>
+/// <para>At main menu the movement will be disabled, only using the camera.</para>
+/// <para>During game it will be limited to terrain space and will collide with ground and objects.</para>
+/// <para>Controlled by MainController and GameController.</para>
+/// </summary>
 public class FirstPersonController : LC_FirstPersonController
 {
 	#region Attributes
