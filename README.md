@@ -3,6 +3,7 @@ A simple life simulation game developed in Unity, where the player can watch a g
 Additionally, you can observe some statistics of the population and change some values of its behaivour affecting its survival.
 It uses the 3D cubic terrain (procedurally generated) and 2D map from the Lost Cartographer Pack (https://github.com/BenetManzanaresSalor/LostCartographerPack), another project created by Benet Manzanares Salor.
 
+![Game screenshot](https://user-images.githubusercontent.com/47823656/99193914-3d220600-277c-11eb-80cc-b05e001ee4a3.png)
 
 # Instructions
 The game initiates at the main menu, where you can start simulation, see instructions or change game settings.
@@ -71,7 +72,10 @@ All these settings are applied when running the simulation.
 
 # Implementation
 This project is implemented with a hierarchical structure, but conceptually the classes can also be divided between Main and Game.
-The most important classes and their relations are briefly explained below.
+A diagram showing the relationships between the main classes is below:
+![ClassDiagram](https://user-images.githubusercontent.com/47823656/99194852-807f7300-2782-11eb-8f0b-aa0ce4c4837d.png)
+
+Following, these classes are briefly explained.
 
 ## MainController
 Top class of the hierarchy, controlling: MainUI, GameController and FirstPersonController.
