@@ -176,6 +176,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7339f535b7f9e1a498e9730e39f6febf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  InitializeAtStart: 1
   TargetTexture: {fileID: 8400000, guid: 13cbf437ffd43e249975439a48aaaa05, type: 2}
   NumCellsWidthAndHeight: {x: 512, y: 512}
   ResolutionDivider: {x: 4, y: 4}
@@ -330,7 +331,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4bc0f18e6746cee4d93f732b40e18abe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Player: {fileID: 840978580}
+  GenerateAtStart: 1
+  ReferencePos: {fileID: 840978580}
   CellSize: {x: 2, y: 1, z: 2}
   ChunkSizeLevel: 4
   ChunkRenderDistance: 8

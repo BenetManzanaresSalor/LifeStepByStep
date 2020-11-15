@@ -20,8 +20,8 @@ The terrain and map systems are described below.
 Any terrain of the pack inherits from the abstract class LC_GenericTerrain, which defines a terrain as group of chunks that contain cells. Chunk and cell types are class parameters that must be children of the LC_Chunk and LC_Cell classes respectively.
 
 Chunks can be created statically or dinamically:
-* **Static**: The chunks will be created at the start as a square around the player position, using the ChunkRenderDistance setting.
-* **Dynamic**: The system will always create the chunks around the player while moving (also using the ChunkRenderDistance setting).
+* **Static**: The chunks will be created at the start as a square around the reference position, using the ChunkRenderDistance setting.
+* **Dynamic**: The system will always create the chunks around the reference position while moving (also using the ChunkRenderDistance setting).
 
 Also, chunks can be created synchronously or parallely:
 * **Synchronous**: The chunk cells, mesh, and gameobject are created consecutively at the main thread.
@@ -52,7 +52,7 @@ An example of this terrain can be found in the Examples folder, which uses the L
 ## Maps
 Any map of the pack inherits from the abstract class LC_GenericMap, which represents a region of a terrain in a RenderTexture. Terrain, chunk and cell types are class parameters that must be children of the LC_GenericMap, LC_Chunk and LC_Cell classes respectively.
 The child class must implement the following methods:
-* **GetReferencePos**: Used to determine the center of the region to map (generally the player's position). The size and resolution of the region represented are configurable.
+* **GetReferencePos**: Used to determine the center of the region to map (usually the player's position). The size and resolution of the region represented are configurable.
 * **GetColorPerCell**: Receives a cell and returns the color that will represent it on the map.
 
 Additionally, if the user wants to map a region which is not loaded at the terrain, the MapNonLoadedChunks setting can be enabled. This option causes the terrain to load (but not build the mesh or gameobject) the chunks needed for the map.

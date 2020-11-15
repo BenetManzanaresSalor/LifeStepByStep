@@ -53,6 +53,8 @@ If the settings option at the main menu is selected, the player can change the f
 	Probability of create an obstacle at a terrain position.
 	The probability has a maximum of 33,3% because it shares probability with the other possible world objects.
 
+All these settings are applied when the world is regenerated.
+
 ### Entity
 * **Death by age**:
 	If each entity dies when it has lived a long time (about 2 or 3 minutes).
@@ -67,7 +69,7 @@ If the settings option at the main menu is selected, the player can change the f
 * **Search radius**:
 	The radius (number of cells in each direction) in which each entity will search to eat or reproduce.
 
-All these settings are applied when running the simulation.
+All these settings are applied when the simulation runs.
 
 
 # Implementation
