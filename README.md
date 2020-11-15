@@ -216,3 +216,13 @@ When the project continues, the following improvements will be implemented:
 * **Genetic mutations at Entity reproduction**
 * **Statistics related to entities attributes**
 * **More world and entity settings**
+
+
+# Attributions
+This project uses icons from the following authors:
+* **Freepik**
+* **PixelPerfect**
+* **RoundIcons**
+* **Smashicons**
+* **Chanut**
+* **Google**
