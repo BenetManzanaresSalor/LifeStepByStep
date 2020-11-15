@@ -204,7 +204,7 @@ This functionalities only take place if the AutomaticSteping variable of the Wor
 
 ## MathFunctions
 Math helper static class implemented specifically for this project, but with generic behavior in mind.
-It includes A* pathfinding algorithm and statistics about the its calls.
+It includes A* pathfinding algorithm and statistics about its calls.
 
 
 # Future improvements
