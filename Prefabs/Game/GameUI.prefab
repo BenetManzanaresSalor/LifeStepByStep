@@ -627,7 +627,7 @@ GameObject:
   - component: {fileID: 4059320520796289744}
   - component: {fileID: 4802188077426601069}
   m_Layer: 5
-  m_Name: Reset
+  m_Name: Regenerate
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -706,7 +706,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 2586953068102046389}
-        m_MethodName: ResetWorld
+        m_MethodName: RegenerateWorld
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

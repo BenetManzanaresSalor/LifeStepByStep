@@ -39,7 +39,7 @@ public class Entity : WorldObject
 
 	// Actions costs
 	protected const float NotActionCost = -1;   // The entity can do more actions after an action with this cost or less.
-	protected const float NullEnergyCost = 0;	// The entity cannot do more actions after an action with this cost or grater.	
+	protected const float NullEnergyCost = 0;   // The entity cannot do more actions after an action with this cost or grater.	
 
 	#endregion
 
@@ -308,8 +308,9 @@ public class Entity : WorldObject
 		// If death by age is enabled and is a different second
 		if ( CurrentWorld.DeathByAge && LastSecondOld != (int)SecondsAlive )
 		{
-			float deathProbabilty = SecondsAlive / SecondsToOld - 1;
-			if ( deathProbabilty > RandomGenerator.NextDouble() * 2 )
+			float deathProbabilty = 1 - ( SecondsToOld / SecondsAlive );
+			double randomValue = RandomGenerator.NextDouble();
+			if ( deathProbabilty > randomValue )
 				Die( true );
 
 			LastSecondOld = (int)SecondsAlive;
@@ -528,32 +529,6 @@ public class Entity : WorldObject
 				}
 			}
 		}
-
-		/*for ( int x = 0; x <= SearchRadius * 2; x++ )
-		{
-			for ( int y = 0; y <= SearchRadius * 2; y++ )
-			{
-				position.x = searchAreaTopLeftCorner.x + x;
-				position.y = searchAreaTopLeftCorner.y + y;
-				if ( position != WorldPosition2D )
-				{
-					currentWorldObj = CurrentTerrain.GetCellContent( position );
-
-					// If the object is interesting
-					if ( IsInterestingObj( currentWorldObj ) )
-					{
-						// If is the closest
-						currentDistance = position.Distance( WorldPosition2D );
-						if ( currentDistance < closestInterestingObjDistance )
-						{
-							closestInterestingObjDistance = currentDistance;
-							closestInterestingObj = currentWorldObj;
-						}
-					}
-				}
-			}
-		}
-		Target = closestInterestingObj;*/
 
 		if ( Target != null )
 			if ( cost < NullEnergyCost )

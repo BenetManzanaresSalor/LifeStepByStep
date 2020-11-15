@@ -205,7 +205,7 @@ public class GameUI : MonoBehaviour
 
 	public void AutomaticStepingToggled( bool enabled ) => PlayPauseIcon.sprite = enabled ? PauseSprite : PlaySprite;
 
-	public void ResetWorld() => GameController.RestartWorld();
+	public void RegenerateWorld() => GameController.RegenerateWorld();
 
 	public void ReturnToMain() => GameController.ReturnToMain();
 

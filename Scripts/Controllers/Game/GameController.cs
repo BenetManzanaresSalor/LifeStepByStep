@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// <para>Manages the behavior of the game, controlling: World, GameUI and FirstPersonController.</para>
+/// <para>Manages the behavior of the game, controlling: GameUI, World and FirstPersonController.</para>
 /// <para>Controlled by MainController.</para>
 /// </summary>
 public class GameController : MonoBehaviour
@@ -32,7 +32,7 @@ public class GameController : MonoBehaviour
 	{
 		MainController = mainController;
 
-		RestartWorld();
+		RegenerateWorld();
 	}
 
 	public void SetEnabled( bool enabled )
@@ -57,7 +57,7 @@ public class GameController : MonoBehaviour
 		if ( Input.GetKeyDown( KeyCode.E ) )
 			ToggleAutomaticSteping();
 		else if ( Input.GetKeyDown( KeyCode.R ) )
-			RestartWorld();
+			RegenerateWorld();
 		else if ( Input.GetKeyDown( KeyCode.T ) )
 			UI.ToggleStatisticsMode();
 		else if ( Input.GetKeyDown( KeyCode.Escape ) )
@@ -68,13 +68,12 @@ public class GameController : MonoBehaviour
 
 	#region Controls
 
-	public void RestartWorld()
+	public void RegenerateWorld()
 	{
 		if ( CurrentWorld.AutomaticSteping )
 			ToggleAutomaticSteping();
 
 		SetPlayerPos( CurrentWorld.transform.position );
-
 		CurrentWorld.Initialize( this, Player.transform );
 		UI.Initialize( this, CurrentWorld );
 		InitializePlayer();

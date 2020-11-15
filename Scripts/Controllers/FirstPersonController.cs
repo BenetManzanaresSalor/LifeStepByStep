@@ -2,10 +2,10 @@
 using UnityEngine.EventSystems;
 
 /// <summary>
-/// <para>Controls the player camera and body movement.</para>
-/// <para>At main menu the movement will be disabled, only using the camera.</para>
-/// <para>During game it will be limited to terrain space and will collide with ground and objects.</para>
-/// <para>Controlled by MainController and GameController.</para>
+/// <para>Controls the player body movement and camera rotation. It is used by MainController and GameController.</para>
+/// <para>In the main menu the movement is disabled, only using the camera.</para>
+/// <para>In the game, movement and camera are enabled, limiting movement to terrain space and colliding with ground and objects.Also, to rotate the camera, you must press the right mouse button.</para>
+/// <para>Additionally, if the player uses the left click raycasting will be used to select a cell, calling the GameController's SelectCell method with collision info as argument.</para>
 /// </summary>
 public class FirstPersonController : LC_FirstPersonController
 {

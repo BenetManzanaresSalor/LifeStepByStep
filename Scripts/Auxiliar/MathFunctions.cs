@@ -450,9 +450,9 @@ public static class MathFunctions
 	#region Random generation
 
 	/// <summary>
-	/// <para>Calculates a pseudo-random direction based on lastDirection and probability.</para>
-	/// <para>If the probability is less than sameDirectionProbability it will compute a diferent direction.</para>
-	/// <para>It will test alternate directions trying to minimize the turn from the lastDirection.</para>
+	/// <para>Calculates a pseudo-random direction based on lastDirection and a random value.</para>
+	/// <para>If the random value is greater than sameDirectionProbability it will compute a diferent direction.</para>
+	/// <para>For that, it will test alternate directions trying to minimize the turn from the lastDirection.</para>
 	/// <para>If no direction is possible, returns Vector2Int.zero.</para>
 	/// </summary>
 	/// <param name="origin">Original position.</param>
