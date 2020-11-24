@@ -1,6 +1,6 @@
 # Life Step by Step
 A simple life simulation game developed in Unity, where the player can watch a group of entities moving, growing, searching, pathfinding, eating, reproducing and dying.
-Additionally, you can observe some statistics of the population and change some values of its behaivour affecting its survival.
+Additionally, you can observe some statistics of the population and change some values of its behaivour, affecting its survival.
 
 It uses the 3D cubic terrain (procedurally generated) and 2D map from the <a href="https://github.com/BenetManzanaresSalor/LostCartographerPack">Lost Cartographer Pack</a>, another own project.
 
@@ -23,7 +23,7 @@ You can change the point of view using this controls:
 * **Spacebar / Shift**:
 	Move up and down. Limited by collisions with the ground and a height maximum.
 * **Hold right click**:
-	Rotate around the Y and X axis. If the right click is not pressed rotation is disabled, allowing to use the UI.
+	Rotate around the Y and X axis. If the right click is not pressed, rotation is disabled to allow use of the UI.
 
 ### World
 You can control the world using this controls:
@@ -79,10 +79,10 @@ All these settings are applied when the simulation runs.
 
 # Implementation
 This project is implemented with a hierarchical structure, but conceptually the classes can also be divided between Main and Game.
-A diagram showing the relationships between the main classes is below:
+The following diagram shows the relationships between the main classes:
 ![ClassDiagram](https://user-images.githubusercontent.com/47823656/99194852-807f7300-2782-11eb-8f0b-aa0ce4c4837d.png)
 
-Following, these classes are briefly explained.
+Following, these classes are brief explained.
 
 ## MainController
 Top class of the hierarchy, controlling: MainUI, GameController and FirstPersonController.
@@ -163,7 +163,7 @@ An Entity has the nexts actions (in order):
 	If SecondsAlive > SecondsToOld, the entity can die by age.
 	SecondsToOld is a random value between 120 and 180 (2-3 minutes) assigned at creation.
 	The probability of dying is: 1 - ( SecondsToOld / SecondsAlive ).
-	That possibility only is checked one time for each second alive and if the DeathByAge setting is enabled.
+	That possibility only is checked one time per second alive and if the DeathByAge setting is enabled.
 	If the entity don't die, the cost of the action is -1, continuing the actions loop.
 * **Give birth**:
 	If the entity IsPregnant (assigned at reproduction action), it can give birth if has started a movement and the previous cell is free.
