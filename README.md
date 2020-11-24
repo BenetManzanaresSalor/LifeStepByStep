@@ -1,5 +1,5 @@
 # Life Step by Step
-A simple life simulation game developed in Unity, where the player can watch a group of entities move, grow, search, do pathfinding, eat, reproduce and die.
+A simple life simulation game developed in Unity, where the player can watch a group of entities moving, growing, searching, pathfinding, eating, reproducing and dying.
 Additionally, you can observe some statistics of the population and change some values of its behaivour affecting its survival.
 
 It uses the 3D cubic terrain (procedurally generated) and 2D map from the <a href="https://github.com/BenetManzanaresSalor/LostCartographerPack">Lost Cartographer Pack</a>, another own project.
