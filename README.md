@@ -80,7 +80,7 @@ All these settings are applied when the simulation runs.
 # Implementation
 This project is implemented with a hierarchical structure, but conceptually the classes can also be divided between Main and Game.
 The following diagram shows the relationships between the main classes:
-![ClassDiagram](https://user-images.githubusercontent.com/47823656/99194852-807f7300-2782-11eb-8f0b-aa0ce4c4837d.png)
+![Class diagram](https://user-images.githubusercontent.com/47823656/100140727-a2b77600-2e91-11eb-9cec-eea7c2ad3d98.png)
 
 Following, these classes are brief explained.
 
