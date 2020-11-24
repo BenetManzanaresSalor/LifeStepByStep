@@ -3,7 +3,7 @@ A simple life simulation game developed in Unity, where the player can watch a g
 Additionally, you can observe some statistics of the population and change some values of its behaivour affecting its survival.
 It uses the 3D cubic terrain (procedurally generated) and 2D map from the Lost Cartographer Pack (https://github.com/BenetManzanaresSalor/LostCartographerPack), another project created by Benet Manzanares Salor.<br>
 You can download an executable version in the itch.io page (https://benetmanzanaressalor.itch.io/life-step-by-step).<br>
-This project is free to use with attribution.
+This project is free to use and modify with attribution.
 
 ![Game screenshot](https://user-images.githubusercontent.com/47823656/99193914-3d220600-277c-11eb-80cc-b05e001ee4a3.png)
 
