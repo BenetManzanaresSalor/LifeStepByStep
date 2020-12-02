@@ -1,10 +1,10 @@
 # Life Step by Step
-A simple life simulation game developed in Unity, where the player can watch a group of entities moving, growing, searching, pathfinding, eating, reproducing and dying.
+A simple life simulation game developed in Unity. The player can watch a group of entities moving, growing, searching, pathfinding, eating, reproducing and dying.
 Additionally, you can observe some statistics of the population and change some values of its behaivour, affecting its survival.
 
-It uses the 3D cubic terrain (procedurally generated) and 2D map from the <a href="https://github.com/BenetManzanaresSalor/LostCartographerPack">Lost Cartographer Pack</a>, another own project.
+It uses the 3D cubic terrain (procedurally generated) and 2D map from the [Lost Cartographer Pack](https://github.com/BenetManzanaresSalor/LostCartographerPack), another own project.
 
-You can download an executable version on the <a href="https://benetmanzanaressalor.itch.io/life-step-by-step">itch.io</a> page.
+You can download an executable version on the [itch.io](https://benetmanzanaressalor.itch.io/life-step-by-step) page.
 
 This project is free to use and modify with attribution.
 
@@ -215,7 +215,7 @@ It includes A* pathfinding algorithm and statistics about its calls.
 
 
 # Future improvements
-When the project continues, the following improvements will be implemented:
+In the future, the following improvements will be implemented:
 * **Genetic mutations at Entity reproduction**
 * **Statistics related to entities attributes**
 * **More world and entity settings**
