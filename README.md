@@ -10,7 +10,7 @@ This project is free to use and modify with attribution.
 
 ![Game screenshot](https://user-images.githubusercontent.com/47823656/99193914-3d220600-277c-11eb-80cc-b05e001ee4a3.png)
 
-# Instructions
+# How to play
 The game initiates at the main menu, where you can start simulation, see instructions or change game settings.
 Once you select the start option, you will use the camera and world controls described below.
 Below that descriptions you can find the settings menu instructions.
